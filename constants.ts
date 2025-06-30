@@ -7,7 +7,7 @@ import {
     Bars3BottomLeftIcon, MusicalNoteIcon, CodeBracketIcon, ChatBubbleLeftRightIcon, HandRaisedIcon, LinkIcon, MapIcon,
     EyeIcon, SunIcon, MoonIcon, CloudIcon, UserGroupIcon, GlobeAltIcon, MagnifyingGlassIcon, PencilIcon, AdjustmentsHorizontalIcon,
     ReceiptPercentIcon, BuildingLibraryIcon, CubeIcon // Added more icons
-} from '@heroicons/react/24/solid'; // Using solid for more impact on KidHome
+} from 'react-native-heroicons/solid'; // Using solid for more impact on KidHome
 
 export const APP_NAME = "BrightFox";
 export const API_KEY_ERROR_MESSAGE = "API Key not found. Please ensure it's set in your environment variables.";

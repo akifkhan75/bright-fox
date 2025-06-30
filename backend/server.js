@@ -5,7 +5,8 @@ const cors = require('cors');
 const apiRoutes = require('./routes');
 
 const app = express();
-const PORT = process.env.PORT || 3001; // Backend server port
+// const PORT = process.env.PORT || 3002; // Backend server port
+const PORT = 3002; // Backend server port
 
 // Middleware
 app.use(cors()); // Enable CORS for all routes (for development)

@@ -1,42 +1,45 @@
-
 import React, { useState, useContext, useCallback } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert } from 'react-native';
 import { AppContext } from '../App';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { generateStoryFromPrompt } from '../services/geminiService';
 import { StoryOutput, AgeGroup } from '../types';
-import { SparklesIcon, PencilIcon } from '@heroicons/react/24/outline';
+// import { SparklesIcon, PencilIcon } from './icons'; // You'll need to create or import these icons
 
 // Simple Drawing Canvas (Placeholder)
 const DrawingCanvas: React.FC<{ onDrawEnd: (description: string) => void }> = ({ onDrawEnd }) => {
-  // This is a placeholder. A real canvas would involve complex event handling.
-  // For now, we'll use a text input to describe the drawing.
   const [description, setDescription] = useState('');
 
   const handleSubmitDrawing = () => {
     if (description.trim()) {
       onDrawEnd(description.trim());
     } else {
-      alert("Please describe your drawing or draw something!");
+      Alert.alert("Oops!", "Please describe your drawing or draw something!");
     }
   };
 
   return (
-    <div className="bg-gray-200 aspect-video w-full rounded-lg mb-4 p-4 flex flex-col items-center justify-center border-2 border-dashed border-gray-400">
-      <PencilIcon className="h-16 w-16 text-gray-400 mb-2"/>
-      <p className="text-center text-gray-500 mb-2 text-sm">
-        Imagine you're drawing here! <br/> Then, describe your masterpiece below.
-      </p>
-      <input 
-        type="text" 
+    <View style={styles.canvasContainer}>
+      {/* <PencilIcon style={styles.pencilIcon} /> */}
+      <Text style={styles.canvasText}>
+        Imagine you're drawing here!{'\n'}Then, describe your masterpiece below.
+      </Text>
+      <TextInput
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        onChangeText={setDescription}
         placeholder="e.g., A happy sun with sunglasses"
-        className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+        style={styles.drawingInput}
       />
-      <Button onClick={handleSubmitDrawing} size="sm" className="mt-3 bg-skyBlue hover:bg-sky-500">Done Drawing!</Button>
-    </div>
+      <Button 
+        onPress={handleSubmitDrawing} 
+        size="sm" 
+        style={styles.drawingButton}
+      >
+        Done Drawing!
+      </Button>
+    </View>
   );
 };
 
@@ -53,7 +56,6 @@ const mapAgeGroupForGemini = (ageGroup: AgeGroup | null): '3-5' | '6-8' | null =
       return null;
   }
 };
-
 
 const DrawAndTellScreen: React.FC = () => {
   const context = useContext(AppContext);
@@ -90,48 +92,168 @@ const DrawAndTellScreen: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 bg-purple-50 min-h-full">
-      <Card className="max-w-lg mx-auto">
-        <div className="flex items-center text-purple-600 mb-4">
-            <SparklesIcon className="h-8 w-8 mr-2"/>
-            <h2 className="text-2xl font-bold font-display">Draw & Tell Adventure!</h2>
-        </div>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.card}>
+        <View style={styles.header}>
+          {/* <SparklesIcon style={styles.sparklesIcon} /> */}
+          <Text style={styles.title}>Draw & Tell Adventure!</Text>
+        </View>
         
         {!story && !isLoading && (
           <>
-            <p className="text-gray-600 mb-4">
+            <Text style={styles.instructions}>
               First, draw a picture (or describe what you'd draw). Then, we'll make a story about it!
-            </p>
+            </Text>
             <DrawingCanvas onDrawEnd={handleDrawingEnd} />
           </>
         )}
 
-        {isLoading && <LoadingSpinner text="Our story wizards are at work..." className="my-8" />}
+        {isLoading && <LoadingSpinner text="Our story wizards are at work..." style={styles.spinner} />}
         
-        {error && <p className="text-red-500 text-center my-4">{error}</p>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
         {story && (
-          <div className="mt-6 p-4 bg-purple-100 rounded-lg shadow">
-            <h3 className="text-2xl font-bold text-purple-700 mb-2 font-kidFriendly">{story.title}</h3>
-            {drawingDescription && <p className="text-sm text-gray-500 mb-3 italic">Based on your drawing of: "{drawingDescription}"</p>}
-            <p className="text-gray-700 whitespace-pre-line leading-relaxed">{story.story}</p>
+          <View style={styles.storyContainer}>
+            <Text style={styles.storyTitle}>{story.title}</Text>
+            {drawingDescription && (
+              <Text style={styles.drawingDescription}>
+                Based on your drawing of: "{drawingDescription}"
+              </Text>
+            )}
+            <Text style={styles.storyText}>{story.story}</Text>
             {story.characters && story.characters.length > 0 && (
-                <p className="text-sm text-purple-600 mt-3"><strong>Characters:</strong> {story.characters.join(', ')}</p>
+              <Text style={styles.storyMeta}><Text style={styles.metaLabel}>Characters:</Text> {story.characters.join(', ')}</Text>
             )}
             {story.setting && (
-                <p className="text-sm text-purple-600"><strong>Setting:</strong> {story.setting}</p>
+              <Text style={styles.storyMeta}><Text style={styles.metaLabel}>Setting:</Text> {story.setting}</Text>
             )}
-          </div>
+          </View>
         )}
 
         {(story || error) && (
-          <Button onClick={resetActivity} fullWidth className="mt-6 bg-purple-500 hover:bg-purple-600">
+          <Button 
+            onPress={resetActivity} 
+            fullWidth 
+            style={styles.resetButton}
+          >
             Draw Another Story!
           </Button>
         )}
       </Card>
-    </div>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 16,
+    backgroundColor: '#f5f3ff', // purple-50
+  },
+  card: {
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sparklesIcon: {
+    width: 32,
+    height: 32,
+    marginRight: 8,
+    color: '#9333ea', // purple-600
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#9333ea', // purple-600
+  },
+  instructions: {
+    color: '#4b5563', // gray-600
+    marginBottom: 16,
+  },
+  canvasContainer: {
+    aspectRatio: 1,
+    width: '100%',
+    backgroundColor: '#e5e7eb', // gray-200
+    borderRadius: 12,
+    marginBottom: 16,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#9ca3af', // gray-400
+  },
+  pencilIcon: {
+    width: 64,
+    height: 64,
+    marginBottom: 8,
+    color: '#9ca3af', // gray-400
+  },
+  canvasText: {
+    textAlign: 'center',
+    color: '#6b7280', // gray-500
+    marginBottom: 8,
+    fontSize: 14,
+  },
+  drawingInput: {
+    width: '100%',
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db', // gray-300
+    borderRadius: 6,
+    backgroundColor: 'white',
+  },
+  drawingButton: {
+    marginTop: 12,
+    backgroundColor: '#0284c7', // skyBlue
+  },
+  spinner: {
+    marginVertical: 32,
+  },
+  error: {
+    color: '#ef4444', // red-500
+    textAlign: 'center',
+    marginVertical: 16,
+  },
+  storyContainer: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#ede9fe', // purple-100
+    borderRadius: 12,
+  },
+  storyTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#7e22ce', // purple-700
+    marginBottom: 8,
+  },
+  drawingDescription: {
+    fontSize: 12,
+    color: '#6b7280', // gray-500
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  storyText: {
+    color: '#374151', // gray-700
+    lineHeight: 24,
+  },
+  storyMeta: {
+    fontSize: 12,
+    color: '#9333ea', // purple-600
+    marginTop: 12,
+  },
+  metaLabel: {
+    fontWeight: 'bold',
+  },
+  resetButton: {
+    marginTop: 24,
+    backgroundColor: '#8b5cf6', // purple-500
+  },
+});
 
 export default DrawAndTellScreen;

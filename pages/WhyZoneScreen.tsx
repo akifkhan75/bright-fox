@@ -1,12 +1,12 @@
-
 import React, { useState, useContext, useCallback, useRef } from 'react';
+import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { AppContext } from '../App';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getAnswerForWhyQuestion } from '../services/geminiService';
-import { Message, GroundingChunk, AgeGroup } from '../types';
-import { QuestionMarkCircleIcon, PaperAirplaneIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { Message, AgeGroup } from '../types';
+// import { QuestionMarkCircleIcon, PaperAirplaneIcon, SparklesIcon } from './icons'; // You'll need to create or import these icons
 
 const mapAgeGroupForGemini = (ageGroup: AgeGroup | null): '3-5' | '6-8' | null => {
   if (!ageGroup) return null;
@@ -31,24 +31,27 @@ const WhyZoneScreen: React.FC = () => {
   const [conversation, setConversation] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const scrollToBottom = () => {
-    chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+    scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  const handleSubmitQuestion = useCallback(async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const handleSubmitQuestion = useCallback(async () => {
     if (!question.trim()) return;
 
-    const userMessage: Message = { id: Date.now().toString(), text: question, sender: 'user', timestamp: new Date() };
+    const userMessage: Message = { 
+      id: Date.now().toString(), 
+      text: question, 
+      sender: 'user', 
+      timestamp: new Date() 
+    };
     setConversation(prev => [...prev, userMessage]);
-    setQuestion(''); // Clear input
+    setQuestion('');
     setIsLoading(true);
     setError(null);
 
-    // Ensure scroll after user message and before bot response
-    setTimeout(scrollToBottom, 0);
+    setTimeout(scrollToBottom, 100);
 
     try {
       const mappedAgeGroup = mapAgeGroupForGemini(kidProfile.ageGroup);
@@ -57,74 +60,245 @@ const WhyZoneScreen: React.FC = () => {
       if (sources && sources.length > 0) {
         botText += "\n\nSource(s):\n" + sources.map(s => `- ${s.web?.title || 'Unknown Source'}: ${s.web?.uri}`).join('\n');
       }
-      const botMessage: Message = { id: (Date.now() + 1).toString(), text: botText, sender: 'bot', timestamp: new Date() };
+      const botMessage: Message = { 
+        id: (Date.now() + 1).toString(), 
+        text: botText, 
+        sender: 'bot', 
+        timestamp: new Date() 
+      };
       setConversation(prev => [...prev, botMessage]);
     } catch (err) {
       console.error(err);
-      const errorMessage: Message = { id: (Date.now() + 1).toString(), text: "Hmm, I'm pondering that... Try asking again in a moment!", sender: 'system', timestamp: new Date() };
+      const errorMessage: Message = { 
+        id: (Date.now() + 1).toString(), 
+        text: "Hmm, I'm pondering that... Try asking again in a moment!", 
+        sender: 'system', 
+        timestamp: new Date() 
+      };
       setConversation(prev => [...prev, errorMessage]);
       setError("Couldn't get an answer right now. Please check your connection or API key setup.");
     } finally {
       setIsLoading(false);
-      setTimeout(scrollToBottom, 0); // Scroll after bot response
+      setTimeout(scrollToBottom, 100);
     }
   }, [question, kidProfile.ageGroup]);
 
   return (
-    <div className="p-4 md:p-6 bg-yellow-50 min-h-full flex flex-col">
-      <Card className="max-w-lg mx-auto flex-grow flex flex-col w-full">
-        <div className="flex items-center text-yellow-600 mb-4">
-          <QuestionMarkCircleIcon className="h-8 w-8 mr-2" />
-          <h2 className="text-2xl font-bold font-display">The Why Zone!</h2>
-        </div>
-        <p className="text-gray-600 mb-4 text-sm">Got a curious question? Ask away! I'll try my best to answer.</p>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        <View style={styles.header}>
+          {/* <QuestionMarkCircleIcon style={styles.headerIcon} /> */}
+          <Text style={styles.title}>The Why Zone!</Text>
+        </View>
+        <Text style={styles.subtitle}>Got a curious question? Ask away! I'll try my best to answer.</Text>
 
-        <div ref={chatContainerRef} className="flex-grow space-y-3 overflow-y-auto p-3 bg-white rounded-md border border-gray-200 mb-4 max-h-96 min-h-[200px]">
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.chatContainer}
+          contentContainerStyle={styles.chatContent}
+          onContentSizeChange={() => scrollToBottom()}
+        >
           {conversation.length === 0 && !isLoading && (
-            <div className="text-center text-gray-400 py-10">
-              <SparklesIcon className="h-12 w-12 mx-auto mb-2"/>
-              <p>Ask anything like "Why is the sky blue?" or "How do birds fly?"</p>
-            </div>
+            <View style={styles.emptyChat}>
+              {/* <SparklesIcon style={styles.sparklesIcon} /> */}
+              <Text style={styles.emptyChatText}>Ask anything like "Why is the sky blue?" or "How do birds fly?"</Text>
+            </View>
           )}
           {conversation.map(msg => (
-            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-2.5 rounded-xl shadow ${
-                msg.sender === 'user' ? 'bg-skyBlue text-white rounded-br-none' : 
-                msg.sender === 'bot' ? 'bg-gray-200 text-gray-800 rounded-bl-none' :
-                'bg-red-100 text-red-700' // System/Error
-              }`}>
-                <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                <p className="text-xs opacity-70 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            </div>
+            <View 
+              key={msg.id} 
+              style={[
+                styles.messageContainer,
+                msg.sender === 'user' ? styles.userMessageContainer : styles.botMessageContainer
+              ]}
+            >
+              <View 
+                style={[
+                  styles.messageBubble,
+                  msg.sender === 'user' ? styles.userMessageBubble : 
+                  msg.sender === 'bot' ? styles.botMessageBubble :
+                  styles.systemMessageBubble
+                ]}
+              >
+                <Text style={styles.messageText}>{msg.text}</Text>
+                <Text style={styles.messageTime}>
+                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+            </View>
           ))}
           {isLoading && (
-            <div className="flex justify-start">
-                 <div className="max-w-[80%] p-3 rounded-lg shadow bg-gray-200 text-gray-800 rounded-bl-none">
-                    <LoadingSpinner size="sm" text="Thinking..." />
-                 </div>
-            </div>
-           )}
-        </div>
+            <View style={styles.botMessageContainer}>
+              <View style={styles.botMessageBubble}>
+                <LoadingSpinner size="sm" text="Thinking..." />
+              </View>
+            </View>
+          )}
+        </ScrollView>
         
-        {error && <p className="text-red-500 text-center text-sm my-2">{error}</p>}
+        {error && <Text style={styles.errorText}>{error}</Text>}
 
-        <form onSubmit={handleSubmitQuestion} className="flex items-center gap-2">
-          <input
-            type="text"
+        <View style={styles.inputContainer}>
+          <TextInput
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onChangeText={setQuestion}
             placeholder="Ask your question here..."
-            className="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-            disabled={isLoading}
+            style={styles.input}
+            editable={!isLoading}
+            onSubmitEditing={handleSubmitQuestion}
           />
-          <Button type="submit" disabled={isLoading || !question.trim()} className="bg-yellow-500 hover:bg-yellow-600 !p-3">
-            <PaperAirplaneIcon className="h-5 w-5 text-white"/>
+          <Button 
+            onPress={handleSubmitQuestion} 
+            disabled={isLoading || !question.trim()} 
+            style={styles.sendButton}
+          >
+            {/* <PaperAirplaneIcon style={styles.sendIcon} /> */}
           </Button>
-        </form>
+        </View>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fefce8', // yellow-50
+  },
+  card: {
+    flex: 1,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  headerIcon: {
+    width: 32,
+    height: 32,
+    color: '#d97706', // yellow-600
+    marginRight: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#d97706', // yellow-600
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#4b5563', // gray-600
+    marginBottom: 16,
+  },
+  chatContainer: {
+    flexGrow: 1,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb', // gray-200
+    marginBottom: 16,
+    maxHeight: 400,
+    minHeight: 200,
+  },
+  chatContent: {
+    padding: 12,
+  },
+  emptyChat: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  sparklesIcon: {
+    width: 48,
+    height: 48,
+    color: '#9ca3af', // gray-400
+    marginBottom: 8,
+  },
+  emptyChatText: {
+    color: '#9ca3af', // gray-400
+    textAlign: 'center',
+  },
+  messageContainer: {
+    marginBottom: 8,
+  },
+  userMessageContainer: {
+    alignItems: 'flex-end',
+  },
+  botMessageContainer: {
+    alignItems: 'flex-start',
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  userMessageBubble: {
+    backgroundColor: '#0284c7', // skyBlue
+    borderBottomRightRadius: 0,
+  },
+  botMessageBubble: {
+    backgroundColor: '#e5e7eb', // gray-200
+    borderBottomLeftRadius: 0,
+  },
+  systemMessageBubble: {
+    backgroundColor: '#fee2e2', // red-100
+  },
+  messageText: {
+    fontSize: 14,
+  },
+  userMessageText: {
+    color: 'white',
+  },
+  botMessageText: {
+    color: '#1f2937', // gray-800
+  },
+  systemMessageText: {
+    color: '#b91c1c', // red-700
+  },
+  messageTime: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  errorText: {
+    color: '#dc2626', // red-600
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  input: {
+    flex: 1,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#d1d5db', // gray-300
+    borderRadius: 12,
+    backgroundColor: 'white',
+  },
+  sendButton: {
+    backgroundColor: '#d97706', // yellow-600
+    padding: 12,
+  },
+  sendIcon: {
+    width: 20,
+    height: 20,
+    color: 'white',
+  },
+});
 
 export default WhyZoneScreen;

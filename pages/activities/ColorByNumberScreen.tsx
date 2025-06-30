@@ -1,14 +1,15 @@
 import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { PaintBrushIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+// import { PaintBrushIcon, CheckCircleIcon } from './icons'; // You'll need to create or import these icons
 
 // Mock Color by Number data
 const colorMap = [
-  { number: 1, color: 'bg-red-500', label: 'Red' },
-  { number: 2, color: 'bg-blue-500', label: 'Blue' },
-  { number: 3, color: 'bg-yellow-400', label: 'Yellow' },
-  { number: 4, color: 'bg-green-500', label: 'Green' },
+  { number: 1, color: '#ef4444', label: 'Red' }, // red-500
+  { number: 2, color: '#3b82f6', label: 'Blue' }, // blue-500
+  { number: 3, color: '#facc15', label: 'Yellow' }, // yellow-400
+  { number: 4, color: '#22c55e', label: 'Green' }, // green-500
 ];
 
 const imageSegments = [ // Simplified representation of an image
@@ -19,66 +20,179 @@ const imageSegments = [ // Simplified representation of an image
 ];
 
 const ColorByNumberScreen: React.FC = () => {
-  const [coloredSegments, setColoredSegments] = React.useState<Record<string, string>>({}); // { segId: colorClass }
+  const [coloredSegments, setColoredSegments] = React.useState<Record<string, string>>({}); // { segId: color }
   
-  const handleColorSegment = (segmentId: string, colorClass: string) => {
-    setColoredSegments(prev => ({...prev, [segmentId]: colorClass }));
+  const handleColorSegment = (segmentId: string, color: string) => {
+    setColoredSegments(prev => ({...prev, [segmentId]: color }));
   };
 
   const allColored = Object.keys(coloredSegments).length === imageSegments.length;
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-violet-200 via-fuchsia-200 to-rose-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-md w-full text-center">
-        <PaintBrushIcon className="h-12 w-12 text-violet-600 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-violet-700 mb-1 font-display">Color by Number!</h2>
-        <p className="text-gray-600 mb-6">Match the numbers to the colors to create a beautiful picture!</p>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        <PaintBrushIcon style={styles.icon} />
+        <Text style={styles.title}>Color by Number!</Text>
+        <Text style={styles.subtitle}>Match the numbers to the colors to create a beautiful picture!</Text>
 
         {/* Color Palette */}
-        <div className="flex justify-center space-x-2 mb-4">
+        <View style={styles.colorPalette}>
           {colorMap.map(c => (
-            <div key={c.number} className="text-center">
-              <div className={`w-8 h-8 rounded-full shadow ${c.color} mx-auto`}></div>
-              <p className="text-xs mt-1">{c.number} = {c.label}</p>
-            </div>
+            <View key={c.number} style={styles.colorItem}>
+              <View style={[styles.colorCircle, { backgroundColor: c.color }]} />
+              <Text style={styles.colorLabel}>{c.number} = {c.label}</Text>
+            </View>
           ))}
-        </div>
+        </View>
 
         {/* Image Area (Mock) */}
-        <div className="grid grid-cols-2 gap-1 bg-gray-100 p-2 rounded-lg mb-6 w-48 h-48 mx-auto border-2 border-gray-300">
+        <View style={styles.imageGrid}>
           {imageSegments.map(seg => {
             const segmentColorInfo = colorMap.find(c => c.number === seg.number);
             return (
-              <button
+              <TouchableOpacity
                 key={seg.id}
-                onClick={() => segmentColorInfo && handleColorSegment(seg.id, segmentColorInfo.color)}
-                className={`w-full h-full flex items-center justify-center text-lg font-bold border border-gray-300 transition-colors ${coloredSegments[seg.id] || 'bg-white hover:bg-gray-50'}`}
-                style={{ backgroundColor: coloredSegments[seg.id] ? '' : undefined }} // Let Tailwind class take over if colored
-                aria-label={`Color segment ${seg.number}`}
+                onPress={() => segmentColorInfo && handleColorSegment(seg.id, segmentColorInfo.color)}
+                style={[
+                  styles.imageSegment,
+                  { 
+                    backgroundColor: coloredSegments[seg.id] || 'white',
+                    borderColor: '#d1d5db', // gray-300
+                  }
+                ]}
+                accessibilityLabel={`Color segment ${seg.number}`}
               >
-                {!coloredSegments[seg.id] && seg.number}
-              </button>
+                {!coloredSegments[seg.id] && (
+                  <Text style={styles.segmentNumber}>{seg.number}</Text>
+                )}
+              </TouchableOpacity>
             );
           })}
-        </div>
+        </View>
         
         {allColored && (
-            <Card className="!bg-green-100 text-green-700 p-4 my-4">
-                <CheckCircleIcon className="h-10 w-10 mx-auto mb-2"/>
-                <h3 className="text-xl font-semibold">Beautifully Colored!</h3>
-            </Card>
+          <Card style={styles.successCard}>
+            <CheckCircleIcon style={styles.successIcon} />
+            <Text style={styles.successText}>Beautifully Colored!</Text>
+          </Card>
         )}
 
         <Button 
-          onClick={() => setColoredSegments({})} 
-          className="mt-4 bg-violet-500 hover:bg-violet-600"
+          onPress={() => setColoredSegments({})} 
+          style={styles.actionButton}
           disabled={!allColored && Object.keys(coloredSegments).length > 0 && !allColored}
+          textStyle={styles.actionButtonText}
         >
           {allColored ? "Color Again!" : (Object.keys(coloredSegments).length > 0 ? "Reset Colors" : "Start Coloring!")}
         </Button>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5d0fe', // fuchsia-200 as base for gradient
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    color: '#7c3aed', // violet-600
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#6d28d9', // violet-700
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#4b5563', // gray-600
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  colorPalette: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
+  colorItem: {
+    alignItems: 'center',
+  },
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  colorLabel: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: 192, // 48 * 4
+    height: 192,
+    backgroundColor: '#f3f4f6', // gray-100
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#d1d5db', // gray-300
+    marginBottom: 24,
+  },
+  imageSegment: {
+    width: '48%',
+    height: '48%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    margin: 2,
+  },
+  segmentNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  successCard: {
+    backgroundColor: '#dcfce7', // green-100
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  successIcon: {
+    width: 40,
+    height: 40,
+    color: '#16a34a', // green-600
+    marginBottom: 8,
+  },
+  successText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#166534', // green-700
+  },
+  actionButton: {
+    backgroundColor: '#7c3aed', // violet-600
+    marginTop: 16,
+  },
+  actionButtonText: {
+    color: 'white',
+  },
+});
 
 export default ColorByNumberScreen;

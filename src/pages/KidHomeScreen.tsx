@@ -36,7 +36,7 @@ const KidHomeScreen: React.FC = () => {
                 For ages: {kidProfile.ageGroup || 'All'} {kidProfile.currentLearningLevel && `| ${kidProfile.currentLearningLevel} Level`}
             </Text>
         </View>
-        <Text style={[styles.title, styles.fontDisplay]}>What do you want to do?</Text>
+        <Text style={[styles.title, styles.fontDisplay]}>What do you want to do?---</Text>
       </View>
 
       <View style={styles.grid}>

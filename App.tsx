@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, PartialState, NavigationState, StackActions } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform, StatusBar, LogBox } from 'react-native';
-import * as Font from 'expo-font';
-import { Asset } from 'expo-asset'; // For image preloading
+import { Platform, StatusBar, LogBox, View, Text } from 'react-native';
+
 
 // Import shared types and constants
 import { AppViewEnum, KidProfile, ParentalControls, TeacherProfile, UserRole, AppState, Activity, KidProgress, Course, Review, KidCourseProgress, ChatConversation, ChatMessage, ChatParticipant, AdminProfile, ActivityStatus } from './src/types';
@@ -92,6 +91,11 @@ const initialAppState: AppState = {
   chatMessages: MOCK_CHAT_MESSAGES, // Consider fetching or local storing
 };
 
+type NavigationOptions = {
+  replace?: boolean;
+  state?: PartialState<NavigationState> | NavigationState | undefined;
+};
+
 export const AppContext = React.createContext<{
   appState: AppState;
   setAppState: React.Dispatch<React.SetStateAction<AppState>>;
@@ -160,20 +164,20 @@ const AppTheme = {
 };
 
 // Font loading function
-async function loadAssetsAsync() {
-  await Font.loadAsync({
-    'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
-    'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
-    'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
-    'Baloo2-Regular': require('./assets/fonts/Baloo2-Regular.ttf'),
-    'Baloo2-Medium': require('./assets/fonts/Baloo2-Medium.ttf'),
-    'Baloo2-SemiBold': require('./assets/fonts/Baloo2-SemiBold.ttf'),
-    'Baloo2-Bold': require('./assets/fonts/Baloo2-Bold.ttf'),
-    'FredokaOne-Regular': require('./assets/fonts/FredokaOne-Regular.ttf'),
-    'ComicNeue-Bold': require('./assets/fonts/ComicNeue-Bold.ttf'),
-  });
-}
+// async function loadAssetsAsync() {
+//   await Font.loadAsync({
+//     'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+//     'Poppins-Medium': require('./assets/fonts/Poppins-Medium.ttf'),
+//     'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
+//     'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+//     'Baloo2-Regular': require('./assets/fonts/Baloo2-Regular.ttf'),
+//     'Baloo2-Medium': require('./assets/fonts/Baloo2-Medium.ttf'),
+//     'Baloo2-SemiBold': require('./assets/fonts/Baloo2-SemiBold.ttf'),
+//     'Baloo2-Bold': require('./assets/fonts/Baloo2-Bold.ttf'),
+//     'FredokaOne-Regular': require('./assets/fonts/FredokaOne-Regular.ttf'),
+//     'ComicNeue-Bold': require('./assets/fonts/ComicNeue-Bold.ttf'),
+//   });
+// }
 
 
 function KidStack() {
@@ -371,16 +375,38 @@ function AppContent() {
     else setAdminProfile(null);
   }, [appState.currentAdminProfileId, appState.adminProfile]);
 
-  const setViewWithPath = useCallback((viewEnum: AppViewEnum, path?: string, options?: { replace?: boolean; state?: any }) => {
-    const viewName = AppViewEnum[viewEnum]; 
-    if (navigationRef.current && viewName) {
-      const action = options?.replace ? 'replace' : 'navigate';
-      navigationRef.current[action](viewName, options?.state);
-      setCurrentViewEnum(viewEnum);
-    } else {
-      console.warn("setViewWithPath: Navigation ref not ready or invalid view.", viewEnum, viewName);
-    }
-  }, []);
+  const setViewWithPath = useCallback(
+    (viewEnum: AppViewEnum, path?: string, options?: NavigationOptions) => {
+      const viewName = AppViewEnum[viewEnum];
+      
+      // Validate navigation ref and view name
+      if (!navigationRef.current) {
+        console.warn('Navigation ref not initialized');
+        return;
+      }
+  
+      if (!viewName) {
+        console.warn('Invalid view enum:', viewEnum);
+        return;
+      }
+  
+      try {
+        const action = options?.replace ? StackActions.replace : StackActions.push;
+        
+        // Create navigation params
+        const params = path ? { path, ...options?.state } : options?.state;
+        
+        // Perform navigation
+        navigationRef.current.dispatch(
+          action(viewName, params)
+        );
+        
+        // Update view state
+        setCurrentViewEnum(viewEnum);
+      } catch (error) {
+        console.error('Navigation failed:', error);
+      }
+    }, []);
 
   const goBack = useCallback(() => {
     if (navigationRef.current?.canGoBack()) {
@@ -598,7 +624,7 @@ function AppContent() {
         {MainStackComponent ? (
           <>
             <Stack.Navigator screenOptions={commonScreenOptions}>
-              <Stack.Screen name="MainApp" component={MainStackComponent} options={noHeaderOptions} />
+              <Stack.Screen name="MainApp" component={MainStackComponent} />
             </Stack.Navigator>
             {showNav && <RNNavigationBottom />}
           </>
@@ -620,17 +646,17 @@ function AppContent() {
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
 
-  useEffect(() => {
-    loadAssetsAsync().then(() => {
-      setAssetsLoaded(true);
-    }).catch(error => {
-      console.warn(error);
-    });
-  }, []);
+  // useEffect(() => {
+  //   loadAssetsAsync().then(() => {
+  //     setAssetsLoaded(true);
+  //   }).catch(error => {
+  //     console.warn(error);
+  //   });
+  // }, []);
 
-  if (!assetsLoaded) {
-    return null; 
-  }
+  // if (!assetsLoaded) {
+  //   return null; 
+  // }
 
   return <AppContent />;
 }

@@ -1,24 +1,33 @@
-
 import React, { useContext, useMemo } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { AppContext } from '../../App';
-import { View, UserRole, ActivityStatus, Course } from '../../types';
+import { View as ViewType, UserRole, ActivityStatus, Course } from '../../types';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
-import { PlusCircleIcon, DocumentTextIcon, CurrencyDollarIcon, UserGroupIcon, Cog6ToothIcon, LightBulbIcon, AcademicCapIcon, ShieldCheckIcon, StarIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/solid';
+
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Feather from 'react-native-vector-icons/Feather';
 
 const TeacherDashboardScreen: React.FC = () => {
   const context = useContext(AppContext);
 
   if (!context || !context.teacherProfile || context.appState.currentUserRole !== UserRole.Teacher) {
-    return <div className="p-4 text-center">Loading teacher dashboard or not authorized...</div>;
+    return (
+      <View style={styles.centeredContainer}>
+        <Text>Loading teacher dashboard or not authorized...</Text>
+      </View>
+    );
   }
+
   const { teacherProfile, setViewWithPath, allCourses, allActivities } = context;
 
   const teacherCreatedCourses = useMemo(() => {
     return allCourses.filter(course => course.teacherId === teacherProfile.id);
   }, [allCourses, teacherProfile.id]);
   
-  const teacherCreatedActivities = useMemo(() => { // Short activities
+  const teacherCreatedActivities = useMemo(() => {
     return allActivities.filter(act => act.creatorId === teacherProfile.id && act.creatorType === 'Teacher');
   }, [allActivities, teacherProfile.id]);
 
@@ -33,127 +42,300 @@ const TeacherDashboardScreen: React.FC = () => {
     Rejected: "Verification Rejected",
   };
   const verificationStatusColor = {
-    NotSubmitted: "bg-gray-400",
-    Pending: "bg-yellow-500",
-    Verified: "bg-green-500",
-    Rejected: "bg-red-500",
+    NotSubmitted: "#9ca3af",
+    Pending: "#eab308",
+    Verified: "#10b981",
+    Rejected: "#ef4444",
   };
 
-
-  const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color?: string; className?: string }> = ({ title, value, icon, color = 'bg-sky-500', className }) => (
-    <Card className={`!p-3 sm:!p-4 transform hover:scale-105 transition-transform duration-150 ${className}`}>
-      <div className={`p-2 rounded-full inline-block mb-1 sm:mb-2 ${color}`}>
+  const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color?: string; style?: any }> = ({ title, value, icon, color = '#0ea5e9', style }) => (
+    <Card style={[styles.statCard, style]}>
+      <View style={[styles.statIconContainer, { backgroundColor: color }]}>
         {icon}
-      </div>
-      <h3 className="text-xl sm:text-2xl font-bold text-gray-700">{value}</h3>
-      <p className="text-xs sm:text-sm text-gray-500">{title}</p>
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
     </Card>
   );
 
+  const DashboardCard: React.FC<{ 
+    title: string; 
+    description: string; 
+    icon: React.ReactNode; 
+    color: string; 
+    bgColor?: string;
+    onPress: () => void;
+  }> = ({ title, description, icon, color, bgColor, onPress }) => (
+    <TouchableOpacity onPress={onPress}>
+      <Card style={[styles.dashboardCard, { borderColor: color, backgroundColor: bgColor }]}>
+        <View style={styles.dashboardCardContent}>
+          <View style={{ color }}>
+            {icon}
+          </View>
+          <View style={styles.dashboardCardText}>
+            <Text style={[styles.dashboardCardTitle, { color }]}>{title}</Text>
+            <Text style={styles.dashboardCardDescription}>{description}</Text>
+          </View>
+        </View>
+      </Card>
+    </TouchableOpacity>
+  );
+
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <Card className="mb-6 bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <img src={teacherProfile.avatarUrl || 'https://picsum.photos/seed/defaultteacher/80/80'} alt={teacherProfile.name} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white/50 object-cover"/>
-          <div className="flex-grow">
-            <h2 className="text-xl sm:text-2xl font-bold">Welcome, {teacherProfile.name}!</h2>
-            <p className="text-sm opacity-90">Your Creator Dashboard</p>
-          </div>
-          <div className={`text-xs px-2 py-1 rounded-full text-white font-semibold whitespace-nowrap ${verificationStatusColor[teacherProfile.verificationStatus || 'NotSubmitted']}`}>
-            {verificationStatusText[teacherProfile.verificationStatus || 'NotSubmitted']}
-          </div>
-        </div>
-        <div className="mt-3 flex items-center text-xs">
-            <StarIcon className="h-4 w-4 mr-1 text-yellow-300"/> 
-            <span>Rating: {teacherProfile.ratingAverage?.toFixed(1) || 'N/A'} ({teacherProfile.ratingCount || 0} reviews)</span>
-        </div>
+    <ScrollView style={styles.container}>
+      {/* Profile Header Card */}
+      <Card style={styles.profileCard}>
+        <View style={styles.profileHeader}>
+          <Image 
+            source={{ uri: teacherProfile.avatarUrl || 'https://picsum.photos/seed/defaultteacher/80/80' }} 
+            style={styles.profileImage}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>Welcome, {teacherProfile.name}!</Text>
+            <Text style={styles.profileSubtitle}>Your Creator Dashboard</Text>
+          </View>
+          <View style={[styles.verificationBadge, { backgroundColor: verificationStatusColor[teacherProfile.verificationStatus || 'NotSubmitted'] }]}>
+            <Text style={styles.verificationText}>
+              {verificationStatusText[teacherProfile.verificationStatus || 'NotSubmitted']}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.ratingContainer}>
+          <Icon name="star" size={16} color="#f59e0b" />
+          <Text style={styles.ratingText}>
+            Rating: {teacherProfile.ratingAverage?.toFixed(1) || 'N/A'} ({teacherProfile.ratingCount || 0} reviews)
+          </Text>
+        </View>
       </Card>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <StatCard title="Active Courses" value={activeCourses} icon={<AcademicCapIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white"/>} color="bg-green-500" />
-        <StatCard title="Courses Pending Review" value={pendingCourses} icon={<DocumentTextIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white"/>} color="bg-yellow-500" />
-        <StatCard title="Approved Activities" value={approvedActivities} icon={<LightBulbIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white"/>} color="bg-blue-500" />
-        <StatCard title="Total Earnings (Mock)" value="$123" icon={<CurrencyDollarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white"/>} color="bg-sky-500" />
-      </div>
+      {/* Stats Grid */}
+      <View style={styles.statsGrid}>
+        <StatCard 
+          title="Active Courses" 
+          value={activeCourses} 
+          icon={<Icon name="school" size={24} color="white" />} 
+          color="#10b981" 
+        />
+        <StatCard 
+          title="Courses Pending" 
+          value={pendingCourses} 
+          icon={<MaterialIcons name="description" size={24} color="white" />} 
+          color="#eab308" 
+        />
+        <StatCard 
+          title="Approved Activities" 
+          value={approvedActivities} 
+          icon={<Icon name="lightbulb-on" size={24} color="white" />} 
+          color="#3b82f6" 
+        />
+        <StatCard 
+          title="Total Earnings" 
+          value="$123" 
+          icon={<FontAwesome name="dollar" size={24} color="white" />} 
+          color="#0ea5e9" 
+        />
+      </View>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card onClick={() => setViewWithPath(View.ActivityBuilder, '/activitybuilder')} className="hover:!shadow-2xl hover:!border-teal-500 border-2 border-transparent transition-all !bg-teal-50 hover:!bg-teal-100">
-          <div className="flex items-center text-teal-700 mb-2">
-            <PlusCircleIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">Create New Course / Activity</h3>
-                <p className="text-sm text-gray-600">Design long courses or short, fun activities.</p>
-            </div>
-          </div>
-        </Card>
-        <Card onClick={() => setViewWithPath(View.TeacherContentManagement, '/teachercontent')} className="hover:!shadow-2xl hover:!border-cyan-500 border-2 border-transparent transition-all">
-          <div className="flex items-center text-cyan-700 mb-2">
-            <DocumentTextIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">Manage My Content</h3>
-                <p className="text-sm text-gray-500">View, edit, or unpublish your courses & activities.</p>
-            </div>
-          </div>
-        </Card>
-         <Card onClick={() => setViewWithPath(View.TeacherProfileView, `/teacherprofileview/${teacherProfile.id}`, {state: {isEditing: true}})} className="hover:!shadow-2xl hover:!border-purple-500 border-2 border-transparent transition-all">
-          <div className="flex items-center text-purple-700 mb-2">
-            <AcademicCapIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">My Teacher Profile</h3>
-                <p className="text-sm text-gray-500">View and edit your public profile details.</p>
-            </div>
-          </div>
-        </Card>
-        <Card onClick={() => setViewWithPath(View.ChatListScreen, '/chatlistscreen')} className="hover:!shadow-2xl hover:!border-pink-500 border-2 border-transparent transition-all !bg-pink-50 hover:!bg-pink-100">
-          <div className="flex items-center text-pink-700 mb-2">
-            <ChatBubbleLeftRightIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">My Messages</h3>
-                <p className="text-sm text-gray-600">Communicate with parents.</p>
-            </div>
-          </div>
-        </Card>
-        <Card onClick={() => setViewWithPath(View.TeacherVerificationView, '/teacherverificationview')} className="hover:!shadow-2xl hover:!border-orange-500 border-2 border-transparent transition-all">
-          <div className="flex items-center text-orange-700 mb-2">
-            <ShieldCheckIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">Verification Center</h3>
-                <p className="text-sm text-gray-500">Manage your verification documents and status.</p>
-            </div>
-          </div>
-        </Card>
-        <Card onClick={() => setViewWithPath(View.TeacherEarnings, '/teacherearnings')} className="hover:!shadow-2xl hover:!border-sky-500 border-2 border-transparent transition-all">
-          <div className="flex items-center text-sky-700 mb-2">
-            <CurrencyDollarIcon className="h-8 w-8 mr-3" />
-             <div>
-                <h3 className="text-xl font-semibold">Earnings & Payouts</h3>
-                <p className="text-sm text-gray-500">Track revenue from premium content.</p>
-            </div>
-          </div>
-        </Card>
-        {/* Student Progress (Classroom) - Placeholder */}
-        {/* <Card onClick={() => alert("Student progress view coming soon for classroom settings!")} className="hover:!shadow-2xl hover:!border-indigo-500 border-2 border-transparent transition-all opacity-70 cursor-not-allowed">
-          <div className="flex items-center text-indigo-700 mb-2">
-            <UserGroupIcon className="h-8 w-8 mr-3" />
-            <div>
-                <h3 className="text-xl font-semibold">Student Progress (Classroom)</h3>
-                <p className="text-sm text-gray-500">Monitor progress for linked students (Soon).</p>
-            </div>
-          </div>
-        </Card> */}
-      </div>
+      {/* Dashboard Cards Grid */}
+      <View style={styles.dashboardGrid}>
+        <DashboardCard
+          title="Create New Content"
+          description="Design long courses or short, fun activities."
+          icon={<Icon name="plus-circle" size={32} color="#0d9488" />}
+          color="#0d9488"
+          bgColor="#ccfbf1"
+          onPress={() => setViewWithPath(ViewType.ActivityBuilder, '/activitybuilder')}
+        />
+        <DashboardCard
+          title="Manage My Content"
+          description="View, edit, or unpublish your courses & activities."
+          icon={<MaterialIcons name="description" size={32} color="#0891b2" />}
+          color="#0891b2"
+          onPress={() => setViewWithPath(ViewType.TeacherContentManagement, '/teachercontent')}
+        />
+        <DashboardCard
+          title="My Teacher Profile"
+          description="View and edit your public profile details."
+          icon={<Icon name="school" size={32} color="#7e22ce" />}
+          color="#7e22ce"
+          onPress={() => setViewWithPath(ViewType.TeacherProfileView, `/teacherprofileview/${teacherProfile.id}`, {state: {isEditing: true}})}
+        />
+        <DashboardCard
+          title="My Messages"
+          description="Communicate with parents."
+          icon={<Icon name="message-text" size={32} color="#be185d" />}
+          color="#be185d"
+          bgColor="#fce7f3"
+          onPress={() => setViewWithPath(ViewType.ChatListScreen, '/chatlistscreen')}
+        />
+        <DashboardCard
+          title="Verification Center"
+          description="Manage your verification documents and status."
+          icon={<Icon name="shield-check" size={32} color="#ea580c" />}
+          color="#ea580c"
+          onPress={() => setViewWithPath(ViewType.TeacherVerificationView, '/teacherverificationview')}
+        />
+        <DashboardCard
+          title="Earnings & Payouts"
+          description="Track revenue from premium content."
+          icon={<FontAwesome name="dollar" size={32} color="#0284c7" />}
+          color="#0284c7"
+          onPress={() => setViewWithPath(ViewType.TeacherEarnings, '/teacherearnings')}
+        />
+      </View>
 
-      <div className="mt-8 text-center">
-        <Button 
-            onClick={() => setViewWithPath(View.Settings, '/settings')} 
-            variant="ghost" 
-            className="text-gray-600"
+      {/* Settings Button */}
+      <View style={styles.settingsButtonContainer}>
+        <Button
+          onPress={() => setViewWithPath(ViewType.Settings, '/settings')}
+          style={styles.settingsButton}
+          textStyle={styles.settingsButtonText}
         >
-            <Cog6ToothIcon className="h-5 w-5 mr-1 inline"/> Account Settings
+          <Feather name="settings" size={16} color="#4b5563" />
+          <Text style={styles.settingsButtonText}> Account Settings</Text>
         </Button>
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+    padding: 16,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  profileCard: {
+    backgroundColor: '#14b8a6',
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  profileImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  profileSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+  },
+  verificationBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  verificationText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: 'white',
+    marginLeft: 4,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  statCard: {
+    width: '48%',
+    padding: 12,
+    alignItems: 'center',
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  statTitle: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  dashboardGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  dashboardCard: {
+    padding: 16,
+    borderWidth: 2,
+    borderRadius: 12,
+  },
+  dashboardCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dashboardCardText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  dashboardCardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  dashboardCardDescription: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  settingsButtonContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: 'transparent',
+  },
+  settingsButtonText: {
+    color: '#4b5563',
+    fontSize: 14,
+  },
+});
 
 export default TeacherDashboardScreen;

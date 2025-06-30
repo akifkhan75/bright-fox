@@ -1,99 +1,205 @@
-
-import React, { useState, useContext } from 'react';
+import React, { useContext } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { AppContext } from '../App';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import { DEFAULT_KID_PROFILE, DEFAULT_PARENTAL_CONTROLS } from '../constants';
-import { View, UserRole, KidProfile, ParentalControls, AppState } from '../types'; 
+import { View as ViewType, UserRole, AppState } from '../types';
 
 const SettingsScreen: React.FC = () => {
   const context = useContext(AppContext);
   if (!context) return null;
 
-  const { appState, parentalControls, setParentalControls, setKidProfile, kidProfile, setHasOnboardedKid, setViewWithPath, setAppState } = context;
+  const { appState, setViewWithPath, setAppState } = context;
 
   const handleResetApp = () => {
-    if (window.confirm("Are you sure you want to reset ALL app data? This will clear all profiles (parent, kids, teachers) and settings.")) {
-      localStorage.clear(); 
-      
-      // Reset AppState completely
-      setAppState({ 
-        currentUserRole: null, 
-        currentKidProfileId: null, 
-        currentParentProfileId: null, 
-        currentTeacherProfileId: null,
-        currentAdminProfileId: null, // Added to satisfy AppState type
-        adminProfile: null,          // Added to satisfy AppState type
-        kidProfiles: [], 
-        parentalControlsMap: {},
-        chatConversations: [], 
-        chatMessages: [], 
-      } as AppState); // Ensure the object matches AppState structure
-      // Context states for active profiles will be cleared by App.tsx's useEffects
-      setViewWithPath(View.Splash, '/', {replace: true});
-    }
+    Alert.alert(
+      "Reset App Data",
+      "Are you sure you want to reset ALL app data? This will clear all profiles (parent, kids, teachers) and settings.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Reset", 
+          onPress: () => {
+            // Clear storage (implementation depends on your storage solution)
+            // For AsyncStorage: AsyncStorage.clear();
+            
+            // Reset AppState completely
+            setAppState({ 
+              currentUserRole: null, 
+              currentKidProfileId: null, 
+              currentParentProfileId: null, 
+              currentTeacherProfileId: null,
+              currentAdminProfileId: null,
+              adminProfile: null,
+              kidProfiles: [], 
+              parentalControlsMap: {},
+              chatConversations: [], 
+              chatMessages: [], 
+            } as AppState);
+            
+            setViewWithPath(ViewType.Splash, '/', {replace: true});
+          }
+        }
+      ]
+    );
   };
 
-
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <Card className="max-w-md mx-auto">
-        <h2 className="text-2xl font-bold text-gray-700 mb-6 text-center font-display">Settings</h2>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        <Text style={styles.title}>Settings</Text>
         
-        <div className="space-y-6">
+        <View style={styles.section}>
           {appState.currentUserRole === UserRole.Parent && (
-            <Card className="!bg-sky-50 !border !border-sky-200">
-                <h3 className="text-lg font-semibold text-sky-700 mb-2">Manage Kid Profiles & Controls</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                    To adjust screen time, learning paths, PINs, or other settings for your children, please go to your Parent Dashboard.
-                </p>
-                <Button 
-                    onClick={() => setViewWithPath(View.ParentDashboard, '/parentdashboard')}
-                    variant="primary"
-                    className="!bg-sky-600 hover:!bg-sky-700"
-                >
-                    Go to Parent Dashboard
-                </Button>
+            <Card style={styles.parentCard}>
+              <Text style={styles.cardTitle}>Manage Kid Profiles & Controls</Text>
+              <Text style={styles.cardText}>
+                To adjust screen time, learning paths, PINs, or other settings for your children, please go to your Parent Dashboard.
+              </Text>
+              <Button 
+                onPress={() => setViewWithPath(ViewType.ParentDashboard, '/parentdashboard')}
+                style={styles.parentButton}
+                textStyle={styles.buttonText}
+              >
+                Go to Parent Dashboard
+              </Button>
             </Card>
           )}
 
           {appState.currentUserRole === UserRole.Teacher && (
-             <Card className="!bg-teal-50 !border !border-teal-200">
-                <h3 className="text-lg font-semibold text-teal-700 mb-2">Teacher Account</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                   Manage your profile, content, and earnings from your Teacher Dashboard.
-                </p>
-                <Button 
-                    onClick={() => setViewWithPath(View.TeacherDashboard, '/teacherdashboard')}
-                    variant="primary"
-                    className="!bg-teal-600 hover:!bg-teal-700"
-                >
-                    Go to Teacher Dashboard
-                </Button>
+            <Card style={styles.teacherCard}>
+              <Text style={styles.cardTitle}>Teacher Account</Text>
+              <Text style={styles.cardText}>
+                Manage your profile, content, and earnings from your Teacher Dashboard.
+              </Text>
+              <Button 
+                onPress={() => setViewWithPath(ViewType.TeacherDashboard, '/teacherdashboard')}
+                style={styles.teacherButton}
+                textStyle={styles.buttonText}
+              >
+                Go to Teacher Dashboard
+              </Button>
             </Card>
           )}
           
           {appState.currentUserRole === UserRole.Kid && (
-             <Card className="!bg-yellow-50 !border !border-yellow-200">
-                <h3 className="text-lg font-semibold text-yellow-700 mb-2">My Settings</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                   Most settings are managed by your parent. If you need help, ask a grown-up!
-                </p>
-                 {/* Kid-specific settings could go here if any, e.g., theme preferences */}
+            <Card style={styles.kidCard}>
+              <Text style={styles.cardTitle}>My Settings</Text>
+              <Text style={styles.cardText}>
+                Most settings are managed by your parent. If you need help, ask a grown-up!
+              </Text>
             </Card>
           )}
 
-
-          <hr className="my-6"/>
-          <h3 className="text-lg font-semibold text-red-600 mb-2">App Data</h3>
-          <p className="text-xs text-gray-500 mb-3">Warning: Resetting will erase all profiles and progress stored on this device.</p>
-          <Button onClick={handleResetApp} fullWidth variant="danger" size="md">
+          <View style={styles.divider} />
+          <Text style={styles.warningTitle}>App Data</Text>
+          <Text style={styles.warningText}>Warning: Resetting will erase all profiles and progress stored on this device.</Text>
+          <Button 
+            onPress={handleResetApp} 
+            style={styles.resetButton}
+            textStyle={styles.resetButtonText}
+          >
             Reset All App Data
           </Button>
-        </div>
+        </View>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f1f5f9', // slate-100
+  },
+  card: {
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#374151', // gray-700
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  section: {
+    gap: 24,
+  },
+  parentCard: {
+    backgroundColor: '#f0f9ff', // sky-50
+    borderWidth: 1,
+    borderColor: '#bae6fd', // sky-200
+    padding: 16,
+  },
+  teacherCard: {
+    backgroundColor: '#f0fdf4', // teal-50
+    borderWidth: 1,
+    borderColor: '#a7f3d0', // teal-200
+    padding: 16,
+  },
+  kidCard: {
+    backgroundColor: '#fefce8', // yellow-50
+    borderWidth: 1,
+    borderColor: '#fef08a', // yellow-200
+    padding: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  parentCardTitle: {
+    color: '#0369a1', // sky-700
+  },
+  teacherCardTitle: {
+    color: '#0f766e', // teal-700
+  },
+  kidCardTitle: {
+    color: '#854d0e', // yellow-700
+  },
+  cardText: {
+    fontSize: 14,
+    color: '#4b5563', // gray-600
+    marginBottom: 12,
+  },
+  parentButton: {
+    backgroundColor: '#0284c7', // sky-600
+  },
+  teacherButton: {
+    backgroundColor: '#0d9488', // teal-600
+  },
+  buttonText: {
+    color: 'white',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb', // gray-200
+    marginVertical: 16,
+  },
+  warningTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#dc2626', // red-600
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#6b7280', // gray-500
+    marginBottom: 12,
+  },
+  resetButton: {
+    backgroundColor: '#dc2626', // red-600
+  },
+  resetButtonText: {
+    color: 'white',
+  },
+});
 
 export default SettingsScreen;

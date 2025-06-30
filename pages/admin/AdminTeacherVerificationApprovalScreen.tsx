@@ -1,17 +1,23 @@
-
 import React, { useContext, useMemo } from 'react';
+import { View, Text, Image, StyleSheet, Alert } from 'react-native';
 import { AppContext } from '../../App';
-import { View, UserRole, TeacherProfile } from '../../types';
+import { View as ViewType, UserRole, TeacherProfile } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { ShieldCheckIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const AdminTeacherVerificationApprovalScreen: React.FC = () => {
   const context = useContext(AppContext);
 
   if (!context || context.appState.currentUserRole !== UserRole.Admin) {
-    return <div className="p-4 text-center">Access Denied. Admins only.</div>;
+    return (
+      <View style={styles.centeredContainer}>
+        <Text>Access Denied. Admins only.</Text>
+      </View>
+    );
   }
+
   const { allTeacherProfiles, updateTeacherVerificationStatus } = context;
 
   const pendingTeachers = useMemo(() => {
@@ -19,64 +25,225 @@ const AdminTeacherVerificationApprovalScreen: React.FC = () => {
   }, [allTeacherProfiles]);
 
   const handleApprove = async (teacherId: string) => {
-    if (window.confirm("Are you sure you want to approve this teacher?")) {
-        await updateTeacherVerificationStatus(teacherId, 'Verified');
-        // State update will re-render
-    }
+    Alert.alert(
+      "Confirm Approval",
+      "Are you sure you want to approve this teacher?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Approve", 
+          onPress: async () => {
+            await updateTeacherVerificationStatus(teacherId, 'Verified');
+          }
+        }
+      ]
+    );
   };
 
   const handleReject = async (teacherId: string) => {
-     if (window.confirm("Are you sure you want to reject this teacher's verification?")) {
-        await updateTeacherVerificationStatus(teacherId, 'Rejected');
-         // State update will re-render
-    }
+    Alert.alert(
+      "Confirm Rejection",
+      "Are you sure you want to reject this teacher's verification?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Reject", 
+          onPress: async () => {
+            await updateTeacherVerificationStatus(teacherId, 'Rejected');
+          }
+        }
+      ]
+    );
   };
 
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <div className="flex items-center mb-6">
-        <ShieldCheckIcon className="h-8 w-8 mr-3 text-yellow-600" />
-        <h1 className="text-2xl font-bold text-gray-800 font-display">Teacher Verification Approvals</h1>
-      </div>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Icon name="shield-check" size={24} color="#b45309" />
+        <Text style={styles.headerText}>Teacher Verification Approvals</Text>
+      </View>
 
       {pendingTeachers.length === 0 ? (
-        <Card className="text-center py-10">
-          <ShieldCheckIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 font-semibold">No pending teacher verifications at the moment.</p>
+        <Card style={styles.emptyCard}>
+          <Icon name="shield-check" size={48} color="#d1d5db" />
+          <Text style={styles.emptyText}>No pending teacher verifications at the moment.</Text>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <View style={styles.listContainer}>
           {pendingTeachers.map(teacher => (
-            <Card key={teacher.id} className="!p-4 shadow-md">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <div className="mb-3 sm:mb-0">
-                  <div className="flex items-center mb-1">
-                    <img src={teacher.avatarUrl || 'https://picsum.photos/seed/default/50/50'} alt={teacher.name} className="w-10 h-10 rounded-full mr-3 object-cover"/>
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-700">{teacher.name}</h3>
-                        <p className="text-xs text-gray-500">{teacher.email}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1 line-clamp-2"><strong>Bio:</strong> {teacher.bio || 'N/A'}</p>
-                  <p className="text-xs text-gray-600"><strong>Subjects:</strong> {teacher.subjects?.join(', ') || 'N/A'}</p>
-                  {/* Mock: Display submitted documents if available */}
-                  <p className="text-xs text-blue-500 mt-1 cursor-pointer hover:underline">View Submitted Documents (Mock)</p>
-                </div>
-                <div className="flex space-x-2 sm:space-x-3 w-full sm:w-auto justify-end">
-                  <Button onClick={() => handleApprove(teacher.id)} variant="primary" size="sm" className="!bg-green-500 hover:!bg-green-600">
-                    <CheckCircleIcon className="h-4 w-4 mr-1 inline"/> Approve
-                  </Button>
-                  <Button onClick={() => handleReject(teacher.id)} variant="danger" size="sm">
-                    <XCircleIcon className="h-4 w-4 mr-1 inline"/> Reject
-                  </Button>
-                </div>
-              </div>
+            <Card key={teacher.id} style={styles.teacherCard}>
+              <View style={styles.teacherInfo}>
+                <View style={styles.teacherHeader}>
+                  <Image 
+                    source={{ uri: teacher.avatarUrl || 'https://picsum.photos/seed/default/50/50' }} 
+                    style={styles.avatar}
+                  />
+                  <View style={styles.teacherDetails}>
+                    <Text style={styles.teacherName}>{teacher.name}</Text>
+                    <Text style={styles.teacherEmail}>{teacher.email}</Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.teacherBio} numberOfLines={2}>
+                  <Text style={styles.boldText}>Bio:</Text> {teacher.bio || 'N/A'}
+                </Text>
+                
+                <Text style={styles.teacherSubjects}>
+                  <Text style={styles.boldText}>Subjects:</Text> {teacher.subjects?.join(', ') || 'N/A'}
+                </Text>
+                
+                <Text style={styles.documentsLink}>
+                  View Submitted Documents (Mock)
+                </Text>
+              </View>
+              
+              <View style={styles.actionButtons}>
+                <Button
+                  onPress={() => handleApprove(teacher.id)}
+                  style={styles.approveButton}
+                  textStyle={styles.buttonText}
+                >
+                  <MaterialIcons name="check-circle" size={16} color="white" />
+                  <Text style={styles.buttonText}> Approve</Text>
+                </Button>
+                
+                <Button
+                  onPress={() => handleReject(teacher.id)}
+                  style={styles.rejectButton}
+                  textStyle={styles.buttonText}
+                >
+                  <MaterialIcons name="cancel" size={16} color="white" />
+                  <Text style={styles.buttonText}> Reject</Text>
+                </Button>
+              </View>
             </Card>
           ))}
-        </div>
+        </View>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f1f5f9',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginLeft: 8,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    marginTop: 16,
+    color: '#4b5563',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  listContainer: {
+    gap: 12,
+  },
+  teacherCard: {
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  teacherInfo: {
+    marginBottom: 12,
+  },
+  teacherHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  teacherDetails: {
+    flex: 1,
+  },
+  teacherName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  teacherEmail: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  teacherBio: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginBottom: 4,
+  },
+  teacherSubjects: {
+    fontSize: 12,
+    color: '#4b5563',
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  documentsLink: {
+    fontSize: 12,
+    color: '#3b82f6',
+    marginTop: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  approveButton: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rejectButton: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+});
 
 export default AdminTeacherVerificationApprovalScreen;

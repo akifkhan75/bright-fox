@@ -1,17 +1,24 @@
-
 import React, { useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, FlatList, ImageBackground } from 'react-native';
 import { AppContext } from '../../App';
 import { UserRole, Badge } from '../../types';
 import { BADGE_DEFINITIONS } from '../../constants';
 import Card from '../../components/Card';
-import { StarIcon, ShieldCheckIcon, AcademicCapIcon } from '@heroicons/react/24/solid';
+// import StarIcon from '../../assets/icons/StarIcon';
+// import ShieldCheckIcon from '../../assets/icons/ShieldCheckIcon';
+// import AcademicCapIcon from '../../assets/icons/AcademicCapIcon';
 
 const MyAchievementsScreen: React.FC = () => {
   const context = useContext(AppContext);
 
   if (!context || !context.kidProfile || !context.kidProgress || context.appState.currentUserRole !== UserRole.Kid) {
-    return <div className="p-4 text-center">Loading achievements or not authorized...</div>;
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading achievements or not authorized...</Text>
+      </View>
+    );
   }
+
   const { kidProfile, kidProgress } = context;
 
   const earnedGeneralBadges: Badge[] = kidProgress.badgesEarned
@@ -26,86 +33,255 @@ const MyAchievementsScreen: React.FC = () => {
 
   const unearnedCourseBadges: Badge[] = BADGE_DEFINITIONS.filter(bDef => bDef.courseId && !kidProgress.badgesEarned.includes(bDef.id));
 
-
   const xpToNextLevel = (kidProgress.level || 1) * 100; 
   const progressPercentage = Math.min(((kidProgress.xp || 0) / xpToNextLevel) * 100, 100);
 
   const BadgeDisplay: React.FC<{badge: Badge, earned: boolean}> = ({badge, earned}) => (
-     <Card className={`!backdrop-blur-sm text-center !p-3 transform hover:scale-105 transition-transform ${earned ? '!bg-white/25' : '!bg-black/10 opacity-70'}`}>
-        <span className={`text-5xl block mb-1 ${!earned ? 'filter grayscale':''}`}>{badge.icon}</span>
-        <h3 className="font-semibold text-sm leading-tight">{badge.name}</h3>
-        <p className={`text-xs mt-0.5 ${earned ? 'opacity-80' : 'opacity-60'}`}>{earned ? badge.description : badge.criteria}</p>
+    <Card style={[styles.badgeCard, { backgroundColor: earned ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.1)' }]}>
+      <Text style={[styles.badgeIcon, !earned && styles.grayscale]}>{badge.icon}</Text>
+      <Text style={styles.badgeName}>{badge.name}</Text>
+      <Text style={[styles.badgeDescription, { opacity: earned ? 0.8 : 0.6 }]}>
+        {earned ? badge.description : badge.criteria}
+      </Text>
     </Card>
   );
 
+  const renderBadgeGrid = (badges: Badge[], earned: boolean) => (
+    <FlatList
+      data={badges}
+      numColumns={3}
+      columnWrapperStyle={styles.badgeGrid}
+      renderItem={({ item }) => <BadgeDisplay badge={item} earned={earned} />}
+      keyExtractor={(item) => item.id}
+      scrollEnabled={false}
+    />
+  );
+
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 min-h-full text-white">
-      <div className="text-center mb-8 pt-4">
-        <span className="text-6xl p-3 bg-white/20 rounded-full inline-block mb-2 shadow-lg">{kidProfile.avatar}</span>
-        <h1 className="text-4xl font-bold font-display text-shadow-md">My Achievements!</h1>
-        <p className="text-lg opacity-90">Wow, {kidProfile.name}, look what you've done!</p>
-      </div>
+    <ImageBackground 
+      // source={require('../../assets/gradient-bg.png')} // Replace with your gradient image
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{kidProfile.avatar}</Text>
+          </View>
+          <Text style={styles.title}>My Achievements!</Text>
+          <Text style={styles.subtitle}>Wow, {kidProfile.name}, look what you've done!</Text>
+        </View>
 
-      <Card className="!bg-white/20 !backdrop-blur-sm mb-6 !p-5">
-        <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-semibold font-kidFriendly">Level: {kidProgress.level || 1}</h2>
-            <AcademicCapIcon className="h-10 w-10 text-yellow-300"/>
-        </div>
-        <div className="w-full bg-white/30 rounded-full h-5 mb-1 shadow-inner">
-          <div 
-            className="bg-yellow-400 h-5 rounded-full transition-all duration-500 ease-out" 
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        <p className="text-xs text-right opacity-80">{kidProgress.xp || 0} / {xpToNextLevel} XP to next level</p>
-      </Card>
+        <Card style={styles.levelCard}>
+          <View style={styles.levelHeader}>
+            <Text style={styles.levelTitle}>Level: {kidProgress.level || 1}</Text>
+            {/* <AcademicCapIcon width={40} height={40} fill="#facc15" /> */}
+            <Text>Icon</Text>
+          </View>
+          <View style={styles.progressBarBackground}>
+            <View 
+              style={[styles.progressBarFill, { width: `${progressPercentage}%` }]}
+            />
+          </View>
+          <Text style={styles.xpText}>{kidProgress.xp || 0} / {xpToNextLevel} XP to next level</Text>
+        </Card>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold font-kidFriendly mb-3 text-shadow-sm">Course Completion Badges!</h2>
-        {earnedCourseBadges.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {earnedCourseBadges.map(badge => <BadgeDisplay key={badge.id} badge={badge} earned={true} />)}
-          </div>
-        ) : (
-          <Card className="!bg-white/10 !backdrop-blur-sm text-center !py-6">
-            <p className="font-semibold">Complete courses to earn special badges! 🎓</p>
-          </Card>
-        )}
-         {unearnedCourseBadges.length > 0 && earnedCourseBadges.length > 0 && <hr className="my-4 border-white/20"/>}
-         {unearnedCourseBadges.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Course Completion Badges!</Text>
+          {earnedCourseBadges.length > 0 ? (
+            renderBadgeGrid(earnedCourseBadges, true)
+          ) : (
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Complete courses to earn special badges! 🎓</Text>
+            </Card>
+          )}
+          {unearnedCourseBadges.length > 0 && earnedCourseBadges.length > 0 && (
+            <View style={styles.divider} />
+          )}
+          {unearnedCourseBadges.length > 0 && (
             <>
-                <h3 className="text-lg font-medium font-kidFriendly mt-3 mb-2 opacity-90">Unlock these Course Badges:</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                     {unearnedCourseBadges.map(badge => <BadgeDisplay key={badge.id} badge={badge} earned={false} />)}
-                </div>
+              <Text style={styles.unlockTitle}>Unlock these Course Badges:</Text>
+              {renderBadgeGrid(unearnedCourseBadges, false)}
             </>
-         )}
-      </section>
+          )}
+        </View>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold font-kidFriendly mb-3 text-shadow-sm">Activity Badges!</h2>
-        {earnedGeneralBadges.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {earnedGeneralBadges.map(badge => <BadgeDisplay key={badge.id} badge={badge} earned={true} />)}
-          </div>
-        ) : (
-          <Card className="!bg-white/10 !backdrop-blur-sm text-center !py-6">
-            <p className="font-semibold">No activity badges yet, but keep playing to earn some! 🎉</p>
-          </Card>
-        )}
-         {unearnedGeneralBadges.length > 0 && earnedGeneralBadges.length > 0 && <hr className="my-4 border-white/20"/>}
-         {unearnedGeneralBadges.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Activity Badges!</Text>
+          {earnedGeneralBadges.length > 0 ? (
+            renderBadgeGrid(earnedGeneralBadges, true)
+          ) : (
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No activity badges yet, but keep playing to earn some! 🎉</Text>
+            </Card>
+          )}
+          {unearnedGeneralBadges.length > 0 && earnedGeneralBadges.length > 0 && (
+            <View style={styles.divider} />
+          )}
+          {unearnedGeneralBadges.length > 0 && (
             <>
-                <h3 className="text-lg font-medium font-kidFriendly mt-3 mb-2 opacity-90">Unlock these Activity Badges:</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {unearnedGeneralBadges.map(badge => <BadgeDisplay key={badge.id} badge={badge} earned={false} />)}
-                </div>
+              <Text style={styles.unlockTitle}>Unlock these Activity Badges:</Text>
+              {renderBadgeGrid(unearnedGeneralBadges, false)}
             </>
-         )}
-      </section>
-      
-    </div>
+          )}
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingTop: 16,
+  },
+  avatarContainer: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  avatarText: {
+    fontSize: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: 'white',
+    opacity: 0.9,
+  },
+  levelCard: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    // backdropFilter: 'blur(10px)',
+    padding: 20,
+    marginBottom: 24,
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  levelTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: 'white',
+  },
+  progressBarBackground: {
+    width: '100%',
+    height: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 10,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+  },
+  proggressBarFill: {
+    height: '100%',
+    backgroundColor: '#facc15',
+    borderRadius: 10,
+  },
+  xpText: {
+    fontSize: 12,
+    color: 'white',
+    opacity: 0.8,
+    textAlign: 'right',
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
+  },
+  badgeCard: {
+    padding: 12,
+    borderRadius: 8,
+    margin: 4,
+    flex: 1,
+    maxWidth: '33%',
+    alignItems: 'center',
+  },
+  badgeIcon: {
+    fontSize: 40,
+    marginBottom: 4,
+  },
+  badgeName: {
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  badgeDescription: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  grayscale: {
+    opacity: 0.7,
+  },
+  badgeGrid: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  emptyCard: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontWeight: '600',
+    color: 'white',
+    textAlign: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginVertical: 16,
+  },
+  unlockTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: 'white',
+    opacity: 0.9,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+});
 
 export default MyAchievementsScreen;

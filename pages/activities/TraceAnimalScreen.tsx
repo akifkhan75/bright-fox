@@ -1,43 +1,118 @@
 import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { PencilIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+// import { PencilIcon, CheckCircleIcon } from './icons'; // You'll need to create or import these icons
 
 const TraceAnimalScreen: React.FC = () => {
   const [traced, setTraced] = React.useState(false);
-  // Example animal outline (SVG or image)
-  const animalOutline = (
-    <svg viewBox="0 0 100 100" className="w-48 h-48 text-gray-400">
-      {/* Simple Cat Outline Example */}
-      <path d="M50 10 C 20 10, 20 40, 20 40 C 20 60, 30 70, 50 90 C 70 70, 80 60, 80 40 C 80 40, 80 10, 50 10 Z M40 50 A5 5 0 0 1 30 50 A5 5 0 0 1 40 50 M70 50 A5 5 0 0 1 60 50 A5 5 0 0 1 70 50 M30 70 Q50 80 70 70" stroke="currentColor" strokeWidth="2" fill="none" />
-    </svg>
+
+  // Simple Cat Outline SVG
+  const AnimalOutline = () => (
+    <Text>animation</Text>
   );
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-purple-200 via-pink-200 to-red-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-md w-full text-center">
-        <PencilIcon className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-purple-700 mb-1 font-display">Trace the Animal!</h2>
-        <p className="text-gray-600 mb-6">Follow the lines to draw a cute animal!</p>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        {/* <PencilIcon style={styles.icon} /> */}
+        <Text style={styles.title}>Trace the Animal!</Text>
+        <Text style={styles.subtitle}>Follow the lines to draw a cute animal!</Text>
 
-        <div className={`bg-white aspect-square w-full max-w-xs mx-auto rounded-lg mb-6 p-4 flex flex-col items-center justify-center border-2 ${traced ? 'border-green-500' : 'border-dashed border-gray-400'}`}>
-          {animalOutline}
-          {traced && <CheckCircleIcon className="h-10 w-10 text-green-500 absolute"/>}
-        </div>
+        <View style={[
+          styles.tracingArea,
+          traced ? styles.tracedArea : styles.untracedArea
+        ]}>
+          <AnimalOutline />
+          {/* {traced && <CheckCircleIcon style={styles.successIcon} />} */}
+        </View>
         
-        <p className="text-sm text-gray-500 mb-4">
+        <Text style={styles.hintText}>
           {traced ? "Great tracing!" : "Imagine your finger is a magic pencil!"}
-        </p>
+        </Text>
 
         <Button 
-          onClick={() => setTraced(!traced)} 
-          className={`mt-4 ${traced ? 'bg-pink-500 hover:bg-pink-600' : 'bg-purple-500 hover:bg-purple-600'}`}
+          onPress={() => setTraced(!traced)} 
+          style={traced ? styles.pinkButton : styles.purpleButton}
+          textStyle={styles.buttonText}
         >
           {traced ? "Trace Another!" : "I Traced It! (Mock)"}
         </Button>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5d0fe', // pink-200 as base for gradient
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    color: '#9333ea', // purple-600
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#7e22ce', // purple-700
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4b5563', // gray-600
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  tracingArea: {
+    width: 240,
+    height: 240,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginBottom: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+  untracedArea: {
+    borderStyle: 'dashed',
+    borderColor: '#9ca3af', // gray-400
+  },
+  tracedArea: {
+    borderColor: '#22c55e', // green-500
+  },
+  successIcon: {
+    width: 40,
+    height: 40,
+    color: '#22c55e', // green-500
+    position: 'absolute',
+  },
+  hintText: {
+    fontSize: 14,
+    color: '#6b7280', // gray-500
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  purpleButton: {
+    backgroundColor: '#9333ea', // purple-500
+  },
+  pinkButton: {
+    backgroundColor: '#ec4899', // pink-500
+  },
+  buttonText: {
+    color: 'white',
+  },
+});
 
 export default TraceAnimalScreen;

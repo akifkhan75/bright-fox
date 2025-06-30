@@ -1,12 +1,19 @@
-
 import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+interface ButtonProps {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   fullWidth?: boolean;
   children: React.ReactNode;
-  className?: string;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+  loading?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -14,50 +21,132 @@ const Button: React.FC<ButtonProps> = ({
   size = 'md',
   fullWidth = false,
   children,
-  className = '',
-  ...props
+  style,
+  textStyle,
+  loading = false,
+  disabled = false,
+  onPress,
 }) => {
-  const baseStyles = 'font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-75 transition-all duration-150 ease-in-out transform active:scale-95';
-  
-  let variantStyles = '';
-  switch (variant) {
-    case 'primary':
-      variantStyles = 'bg-sky-500 text-white hover:bg-sky-600 focus:ring-sky-500';
-      break;
-    case 'secondary':
-      variantStyles = 'bg-pink-500 text-white hover:bg-pink-600 focus:ring-pink-500';
-      break;
-    case 'danger':
-      variantStyles = 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500';
-      break;
-    case 'ghost':
-      variantStyles = 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-400 border border-gray-300';
-      break;
-  }
+  // Variant styles
+  const variantStyles = {
+    primary: {
+      backgroundColor: '#0ea5e9',
+      borderColor: '#0ea5e9',
+    },
+    secondary: {
+      backgroundColor: '#ec4899',
+      borderColor: '#ec4899',
+    },
+    danger: {
+      backgroundColor: '#ef4444',
+      borderColor: '#ef4444',
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      borderColor: '#d1d5db',
+    },
+  };
 
-  let sizeStyles = '';
-  switch (size) {
-    case 'sm':
-      sizeStyles = 'px-3 py-1.5 text-sm';
-      break;
-    case 'md':
-      sizeStyles = 'px-4 py-2 text-base';
-      break;
-    case 'lg':
-      sizeStyles = 'px-6 py-3 text-lg';
-      break;
-  }
+  // Size styles
+  const sizeStyles = {
+    sm: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+    },
+    md: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    lg: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+    },
+  };
 
-  const widthStyles = fullWidth ? 'w-full' : '';
+  // Text styles based on variant
+  const textVariantStyles = {
+    primary: {
+      color: '#ffffff',
+    },
+    secondary: {
+      color: '#ffffff',
+    },
+    danger: {
+      color: '#ffffff',
+    },
+    ghost: {
+      color: '#374151',
+    },
+  };
+
+  // Text size styles
+  const textSizeStyles = {
+    sm: {
+      fontSize: 14,
+    },
+    md: {
+      fontSize: 16,
+    },
+    lg: {
+      fontSize: 18,
+    },
+  };
+
+  // Disabled state
+  const disabledStyles = disabled ? {
+    opacity: 0.6,
+  } : {};
 
   return (
-    <button
-      className={`${baseStyles} ${variantStyles} ${sizeStyles} ${widthStyles} ${className}`}
-      {...props}
+    <TouchableOpacity
+      style={[
+        styles.base,
+        variantStyles[variant],
+        sizeStyles[size],
+        fullWidth && styles.fullWidth,
+        disabledStyles,
+        style,
+      ]}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
     >
-      {children}
-    </button>
+      {loading ? (
+        <ActivityIndicator color={textVariantStyles[variant].color} />
+      ) : (
+        <Text style={[
+          styles.textBase,
+          textVariantStyles[variant],
+          textSizeStyles[size],
+          textStyle,
+        ]}>
+          {children}
+        </Text>
+      )}
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  base: {
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    flexDirection: 'row',
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  textBase: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 export default Button;

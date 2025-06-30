@@ -1,109 +1,311 @@
-
 import React, { useContext, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { AppContext } from '../../App';
-import { View, UserRole, ActivityStatus } from '../../types';
+import { View as ViewType, UserRole, ActivityStatus } from '../../types';
 import Card from '../../components/Card';
-import { ShieldCheckIcon, EyeIcon, UserGroupIcon, AcademicCapIcon, ChartBarIcon, ArrowRightIcon } from '@heroicons/react/24/solid';
+// import { 
+//   ShieldCheckIcon, 
+//   EyeIcon, 
+//   UserGroupIcon, 
+//   AcademicCapIcon, 
+//   ArrowRightIcon 
+// } from 'react-native-vector-icons'; // You'll need to create or import these icons
 
 const AdminDashboardScreen: React.FC = () => {
   const context = useContext(AppContext);
 
   if (!context || context.appState.currentUserRole !== UserRole.Admin) {
-    return <div className="p-4 text-center">Access Denied. Admins only.</div>;
+    return (
+      <View style={styles.deniedContainer}>
+        <Text>Access Denied. Admins only.</Text>
+      </View>
+    );
   }
+
   const { appState, allTeacherProfiles, allCourses, allActivities, setViewWithPath } = context;
 
-  const pendingVerifications = useMemo(() => allTeacherProfiles.filter(t => t.verificationStatus === 'Pending').length, [allTeacherProfiles]);
-  const pendingCourses = useMemo(() => allCourses.filter(c => c.status === ActivityStatus.Pending).length, [allCourses]);
-  const pendingActivities = useMemo(() => allActivities.filter(a => a.creatorType === 'Teacher' && a.status === ActivityStatus.Pending).length, [allActivities]);
+  const pendingVerifications = useMemo(() => 
+    allTeacherProfiles.filter(t => t.verificationStatus === 'Pending').length, 
+    [allTeacherProfiles]
+  );
+  const pendingCourses = useMemo(() => 
+    allCourses.filter(c => c.status === ActivityStatus.Pending).length, 
+    [allCourses]
+  );
+  const pendingActivities = useMemo(() => 
+    allActivities.filter(a => a.creatorType === 'Teacher' && a.status === ActivityStatus.Pending).length, 
+    [allActivities]
+  );
 
-  const totalParents = useMemo(() => new Set(appState.kidProfiles.map(kp => kp.parentId).filter(Boolean)).size, [appState.kidProfiles]);
+  const totalParents = useMemo(() => 
+    new Set(appState.kidProfiles.map(kp => kp.parentId).filter(Boolean)).size, 
+    [appState.kidProfiles]
+  );
   const totalKids = appState.kidProfiles.length;
   const totalTeachers = allTeacherProfiles.length;
 
-  const StatCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; color?: string; onClick?: () => void }> = 
-    ({ title, value, icon: Icon, color = 'bg-sky-500', onClick }) => (
-    <Card className={`!p-4 transform hover:scale-105 transition-transform duration-150 ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-3xl font-bold text-gray-700">{value}</p>
-        </div>
-        <div className={`p-3 rounded-full ${color}`}>
-          <Icon className="h-6 w-6 text-white"/>
-        </div>
-      </div>
-    </Card>
+  const StatCard: React.FC<{ 
+    title: string; 
+    value: string | number; 
+    icon: React.ElementType | string; 
+    color?: string; 
+    onPress?: () => void 
+  }> = ({ title, value, icon: Icon, color = '#0ea5e9', onPress }) => (
+    <TouchableOpacity onPress={onPress} disabled={!onPress}>
+      <Card style={styles.statCard}>
+        <View style={styles.statCardContent}>
+          <View>
+            <Text style={styles.statCardTitle}>{title}</Text>
+            <Text style={styles.statCardValue}>{value}</Text>
+          </View>
+          <View style={[styles.statCardIconContainer, { backgroundColor: color }]}>
+            <Icon style={styles.statCardIcon} />
+          </View>
+        </View>
+      </Card>
+    </TouchableOpacity>
   );
 
-  const ActionCard: React.FC<{ title: string; description: string; icon: React.ElementType; onClick: () => void; badgeCount?: number; badgeColor?: string; }> = 
-  ({ title, description, icon: Icon, onClick, badgeCount, badgeColor = 'bg-red-500' }) => (
-    <Card onClick={onClick} className="relative hover:!shadow-xl transition-shadow !bg-slate-50 hover:!bg-slate-100">
+  const ActionCard: React.FC<{ 
+    title: string; 
+    description: string; 
+    icon: React.ElementType | string; 
+    onPress: () => void; 
+    badgeCount?: number; 
+    badgeColor?: string; 
+  }> = ({ title, description, icon: Icon, onPress, badgeCount, badgeColor = '#ef4444' }) => (
+    <TouchableOpacity onPress={onPress}>
+      <Card style={styles.actionCard}>
         {badgeCount && badgeCount > 0 && (
-            <span className={`absolute top-2 right-2 px-2 py-0.5 text-xs font-semibold text-white rounded-full ${badgeColor}`}>
-                {badgeCount}
-            </span>
+          <View style={[styles.badge, { backgroundColor: badgeColor }]}>
+            <Text style={styles.badgeText}>{badgeCount}</Text>
+          </View>
         )}
-        <div className="flex items-center mb-2">
-            <Icon className="h-8 w-8 mr-3 text-sky-600"/>
-            <h3 className="text-xl font-semibold text-sky-700">{title}</h3>
-        </div>
-        <p className="text-sm text-gray-600 mb-3">{description}</p>
-        <div className="text-right">
-            <span className="text-xs text-sky-500 hover:text-sky-700 font-semibold flex items-center justify-end">
-                Go to Section <ArrowRightIcon className="h-3 w-3 ml-1"/>
-            </span>
-        </div>
-    </Card>
+        <View style={styles.actionCardHeader}>
+          <Icon style={styles.actionCardIcon} />
+          <Text style={styles.actionCardTitle}>{title}</Text>
+        </View>
+        <Text style={styles.actionCardDescription}>{description}</Text>
+        <View style={styles.actionCardFooter}>
+          <Text style={styles.actionCardLink}>
+            Go to Section 
+            {/* <ArrowRightIcon style={styles.arrowIcon} /> */}
+          </Text>
+        </View>
+      </Card>
+    </TouchableOpacity>
   );
 
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6 font-display">Admin Dashboard</h1>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Admin Dashboard</Text>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <StatCard title="Pending Verifications" value={pendingVerifications} icon={ShieldCheckIcon} color="bg-yellow-500" onClick={() => setViewWithPath(View.AdminTeacherVerificationApproval, '/adminteacherapproval')}/>
-        <StatCard title="Pending Content (Courses)" value={pendingCourses} icon={AcademicCapIcon} color="bg-orange-500" onClick={() => setViewWithPath(View.AdminContentModeration, '/admincontentmoderation')}/>
-        <StatCard title="Pending Content (Activities)" value={pendingActivities} icon={EyeIcon} color="bg-pink-500" onClick={() => setViewWithPath(View.AdminContentModeration, '/admincontentmoderation')}/>
-      </div>
+      <View style={styles.statsContainer}>
+        <StatCard 
+          title="Pending Verifications" 
+          value={pendingVerifications} 
+          icon={'ShieldCheckIcon'} 
+          color="#eab308" 
+          onPress={() => setViewWithPath(ViewType.AdminTeacherVerificationApproval, '/adminteacherapproval')}
+        />
+        <StatCard 
+          title="Pending Content (Courses)" 
+          value={pendingCourses} 
+          icon={'AcademicCapIcon'} 
+          color="#f97316" 
+          onPress={() => setViewWithPath(ViewType.AdminContentModeration, '/admincontentmoderation')}
+        />
+        <StatCard 
+          title="Pending Content (Activities)" 
+          value={pendingActivities} 
+          icon={'EyeIcon'} 
+          color="#ec4899" 
+          onPress={() => setViewWithPath(ViewType.AdminContentModeration, '/admincontentmoderation')}
+        />
+      </View>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <View style={styles.actionsContainer}>
         <ActionCard 
-            title="Teacher Approvals" 
-            description="Review and approve/reject teacher verification submissions."
-            icon={ShieldCheckIcon}
-            onClick={() => setViewWithPath(View.AdminTeacherVerificationApproval, '/adminteacherapproval')}
-            badgeCount={pendingVerifications}
-            badgeColor="bg-yellow-500"
+          title="Teacher Approvals" 
+          description="Review and approve/reject teacher verification submissions."
+          icon={'ShieldCheckIcon'}
+          onPress={() => setViewWithPath(ViewType.AdminTeacherVerificationApproval, '/adminteacherapproval')}
+          badgeCount={pendingVerifications}
+          badgeColor="#eab308"
         />
-         <ActionCard 
-            title="Content Moderation" 
-            description="Review and approve/reject courses and activities created by teachers."
-            icon={EyeIcon}
-            onClick={() => setViewWithPath(View.AdminContentModeration, '/admincontentmoderation')}
-            badgeCount={pendingCourses + pendingActivities}
-            badgeColor="bg-orange-500"
+        <ActionCard 
+          title="Content Moderation" 
+          description="Review and approve/reject courses and activities created by teachers."
+          icon={'EyeIcon'}
+          onPress={() => setViewWithPath(ViewType.AdminContentModeration, '/admincontentmoderation')}
+          badgeCount={pendingCourses + pendingActivities}
+          badgeColor="#f97316"
         />
-      </div>
+      </View>
       
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <View style={styles.bottomContainer}>
         <ActionCard 
-            title="User Management" 
-            description="View user statistics and manage accounts (basic view)."
-            icon={UserGroupIcon}
-            onClick={() => setViewWithPath(View.AdminUserManagement, '/adminusermanagement')}
+          title="User Management" 
+          description="View user statistics and manage accounts (basic view)."
+          icon={'UserGroupIcon'}
+          onPress={() => setViewWithPath(ViewType.AdminUserManagement, '/adminusermanagement')}
         />
-        <Card className="!bg-slate-50">
-            <h3 className="text-xl font-semibold text-sky-700 mb-2">App Statistics</h3>
-            <div className="space-y-1 text-sm text-gray-600">
-                <p>Total Parents: <span className="font-semibold">{totalParents}</span></p>
-                <p>Total Kids: <span className="font-semibold">{totalKids}</span></p>
-                <p>Total Teachers: <span className="font-semibold">{totalTeachers}</span></p>
-            </div>
+        <Card style={styles.statsCard}>
+          <Text style={styles.statsCardTitle}>App Statistics</Text>
+          <View style={styles.statsList}>
+            <Text style={styles.statsItem}>
+              Total Parents: <Text style={styles.statsValue}>{totalParents}</Text>
+            </Text>
+            <Text style={styles.statsItem}>
+              Total Kids: <Text style={styles.statsValue}>{totalKids}</Text>
+            </Text>
+            <Text style={styles.statsItem}>
+              Total Teachers: <Text style={styles.statsValue}>{totalTeachers}</Text>
+            </Text>
+          </View>
         </Card>
-       </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    backgroundColor: '#f1f5f9', // slate-100
+  },
+  deniedContainer: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1e293b', // slate-800
+    marginBottom: 24,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 24,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '30%',
+    padding: 16,
+  },
+  statCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statCardTitle: {
+    fontSize: 14,
+    color: '#64748b', // slate-500
+    marginBottom: 4,
+  },
+  statCardValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#334155', // slate-700
+  },
+  statCardIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statCardIcon: {
+    width: 24,
+    height: 24,
+    color: 'white',
+  },
+  actionsContainer: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  actionCard: {
+    padding: 16,
+    backgroundColor: '#f8fafc', // slate-50
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+  },
+  actionCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionCardIcon: {
+    width: 32,
+    height: 32,
+    color: '#0284c7', // sky-600
+    marginRight: 12,
+  },
+  actionCardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0369a1', // sky-700
+  },
+  actionCardDescription: {
+    fontSize: 14,
+    color: '#475569', // slate-600
+    marginBottom: 16,
+  },
+  actionCardFooter: {
+    alignItems: 'flex-end',
+  },
+  actionCardLink: {
+    fontSize: 12,
+    color: '#0ea5e9', // sky-500
+    fontWeight: '600',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  arrowIcon: {
+    width: 12,
+    height: 12,
+    marginLeft: 4,
+    color: '#0ea5e9', // sky-500
+  },
+  bottomContainer: {
+    gap: 16,
+  },
+  statsCard: {
+    padding: 16,
+    backgroundColor: '#f8fafc', // slate-50
+  },
+  statsCardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0369a1', // sky-700
+    marginBottom: 12,
+  },
+  statsList: {
+    gap: 4,
+  },
+  statsItem: {
+    fontSize: 14,
+    color: '#475569', // slate-600
+  },
+  statsValue: {
+    fontWeight: '600',
+  },
+});
 
 export default AdminDashboardScreen;

@@ -1,22 +1,19 @@
-
 import React, { useContext, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { View, Text, StyleSheet } from 'react-native';
 import { AppContext } from '../App';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { VideoCameraIcon } from '@heroicons/react/24/solid';
-import { Course, Lesson, View } from '../types'; // Import View
+// import { VideoCameraIcon } from './icons'; // You'll need to create or import this icon
+import { Course, Lesson, View as ViewType } from '../types';
 
-const LiveClassPlaceholderScreen: React.FC = () => {
+const LiveClassPlaceholderScreen: React.FC<{ route?: any }> = ({ route }) => {
   const context = useContext(AppContext);
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const [course, setCourse] = useState<Course | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
 
-  const { courseId, lessonId } = location.state as { courseId?: string; lessonId?: string } || {};
+  // Get params from navigation route
+  const { courseId, lessonId } = route?.params || {};
 
   useEffect(() => {
     if (context && courseId && lessonId) {
@@ -35,53 +32,124 @@ const LiveClassPlaceholderScreen: React.FC = () => {
     }
   }, [context, courseId, lessonId]);
 
-
   if (!context) return <LoadingSpinner text="Loading..." />;
 
   const handleLeave = () => {
     // Navigate back to learning path or kid home
-    if(courseId) {
-        context.setViewWithPath(View.KidLearningPathView, '/kidlearningpathview', {state: {courseId}});
+    if (courseId) {
+      context.setViewWithPath(ViewType.KidLearningPathView, '/kidlearningpathview', { state: { courseId } });
     } else {
-        context.setViewWithPath(View.KidHome, '/kidhome');
+      context.setViewWithPath(ViewType.KidHome, '/kidhome');
     }
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 min-h-full flex flex-col items-center justify-center text-white">
-      <Card className="max-w-md w-full text-center !bg-white/10 !backdrop-blur-md">
-        <VideoCameraIcon className="h-16 w-16 text-white mx-auto mb-6 animate-pulse" />
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        {/* <VideoCameraIcon style={styles.videoIcon} /> */}
+        <Text>Video Cam Icon</Text>
         
-        <h1 className="text-3xl font-bold font-display mb-3">Joining Live Class...</h1>
+        <Text style={styles.title}>Joining Live Class...</Text>
         
         {lesson && course && (
-            <div className="mb-6 text-sm opacity-90">
-                <p><strong>Course:</strong> {course.title}</p>
-                <p><strong>Lesson:</strong> {lesson.title}</p>
-                {lesson.content.liveSessionDetails?.dateTime && (
-                    <p>Scheduled for: {new Date(lesson.content.liveSessionDetails.dateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                )}
-            </div>
+          <View style={styles.detailsContainer}>
+            <Text style={styles.detailText}><Text style={styles.detailLabel}>Course:</Text> {course.title}</Text>
+            <Text style={styles.detailText}><Text style={styles.detailLabel}>Lesson:</Text> {lesson.title}</Text>
+            {lesson.content.liveSessionDetails?.dateTime && (
+              <Text style={styles.detailText}>
+                Scheduled for: {new Date(lesson.content.liveSessionDetails.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            )}
+          </View>
         )}
 
-        <LoadingSpinner text="Connecting to your teacher..." className="!text-white child:!text-white" />
+        <LoadingSpinner 
+          text="Connecting to your teacher..." 
+          style={styles.spinner}
+          textStyle={styles.spinnerText}
+        />
 
-        <p className="text-xs opacity-80 mt-6 mb-4">
+        <Text style={styles.noteText}>
           Please wait a moment. Your teacher will start the class soon!
-          <br/>
+          {'\n'}
           (This is a placeholder. In a real app, Zoom/Jitsi would launch.)
-        </p>
+        </Text>
 
         <Button 
-          onClick={handleLeave} 
-          variant="ghost"
-          className="!text-white !border-white/50 hover:!bg-white/20"
+          onPress={handleLeave} 
+          style={styles.leaveButton}
+          textStyle={styles.leaveButtonText}
         >
           Leave Class
         </Button>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#ec4899', // pink-500 as base for gradient
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+  },
+  videoIcon: {
+    width: 64,
+    height: 64,
+    color: 'white',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  detailsContainer: {
+    marginBottom: 24,
+  },
+  detailText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  detailLabel: {
+    fontWeight: 'bold',
+  },
+  spinner: {
+    marginVertical: 24,
+  },
+  spinnerText: {
+    color: 'white',
+  },
+  noteText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginVertical: 16,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  leaveButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'transparent',
+    marginTop: 8,
+  },
+  leaveButtonText: {
+    color: 'white',
+  },
+});
 
 export default LiveClassPlaceholderScreen;

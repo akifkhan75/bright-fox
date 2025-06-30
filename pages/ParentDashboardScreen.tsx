@@ -1,16 +1,24 @@
-
-import React, { useContext, useState, useMemo } from 'react'; 
-import { AppContext } from '../../App';
-import { View, UserRole, Course, KidProfile } from '../../types';
-import Button from '../../components/Button';
-import Card from '../../components/Card';
-import { ClockIcon, SparklesIcon, Cog6ToothIcon, ShieldCheckIcon, UserGroupIcon, AcademicCapIcon, EyeIcon, ChartBarIcon, MagnifyingGlassIcon, BookOpenIcon, StarIcon, PlusCircleIcon, UserPlusIcon, UsersIcon, AdjustmentsVerticalIcon, CreditCardIcon } from '@heroicons/react/24/outline'; // Updated icons
+import React, { useContext, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { AppContext } from '../App';
+import { View as ViewType, UserRole, Course, KidProfile } from '../types';
+import Button from '../components/Button';
+import Card from '../components/Card';
+// import { 
+//   UsersIcon, UserPlusIcon, MagnifyingGlassIcon, 
+//   CreditCardIcon, ShieldCheckIcon, Cog6ToothIcon,
+//   EyeIcon, AdjustmentsVerticalIcon
+// } from './icons'; // You'll need to create or import these icons
 
 const ParentDashboardScreen: React.FC = () => {
   const context = useContext(AppContext);
   
   if (!context || !context.appState.currentParentProfileId || context.appState.currentUserRole !== UserRole.Parent) {
-     return <div className="p-4 text-center">Loading parent dashboard or not authorized...</div>;
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading parent dashboard or not authorized...</Text>
+      </View>
+    );
   }
 
   const { appState, setViewWithPath, allCourses, allTeacherProfiles, switchViewToKidAsParent } = context; 
@@ -19,139 +27,357 @@ const ParentDashboardScreen: React.FC = () => {
     return appState.kidProfiles.filter(kp => kp.parentId === appState.currentParentProfileId);
   }, [appState.kidProfiles, appState.currentParentProfileId]);
 
-
   const KidCard: React.FC<{kid: KidProfile}> = ({ kid }) => {
-    const kidProgress = context.kidProgress; // This is for the active kid, not ideal here. Need per-kid progress.
-                                             // For now, use kid.level as a placeholder.
     const enrolledCoursesCount = kid.enrolledCourseIds?.length || 0;
 
     return (
-        <Card className="!p-3 sm:!p-4 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center space-x-3 mb-3">
-                <span className="text-4xl sm:text-5xl p-1 bg-sky-100 rounded-full">{kid.avatar}</span>
-                <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-sky-700">{kid.name}</h3>
-                    <p className="text-xs text-gray-500">Age Group: {kid.ageGroup} | Level: {kid.level || 1}</p>
-                    <p className="text-xs text-gray-500">Learning Level: {kid.currentLearningLevel}</p>
-                </div>
-            </div>
-            <p className="text-xs text-gray-600 mb-1">Enrolled Courses: {enrolledCoursesCount}</p>
-            <p className="text-xs text-gray-600 mb-3">Learning Focus: {kid.learningPathFocus?.join(', ') || 'General'}</p>
-            <div className="grid grid-cols-2 gap-2">
-                <Button 
-                    size="sm" 
-                    variant="primary"
-                    className="!bg-sky-500 hover:!bg-sky-600 !text-xs"
-                    onClick={() => switchViewToKidAsParent(kid.id)}
-                >
-                    <EyeIcon className="h-4 w-4 mr-1 inline"/> Kid's View
-                </Button>
-                <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="!text-sky-600 hover:!bg-sky-50 !border-sky-300 !text-xs"
-                    onClick={() => setViewWithPath(View.ParentManageKidDetail, `/parentmanagekiddetail/${kid.id}`)}
-                >
-                    <AdjustmentsVerticalIcon className="h-4 w-4 mr-1 inline"/> Manage
-                </Button>
-            </div>
-        </Card>
+      <Card style={styles.kidCard}>
+        <View style={styles.kidCardHeader}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{kid.avatar}</Text>
+          </View>
+          <View style={styles.kidInfo}>
+            <Text style={styles.kidName}>{kid.name}</Text>
+            <Text style={styles.kidDetail}>Age Group: {kid.ageGroup} | Level: {kid.level || 1}</Text>
+            <Text style={styles.kidDetail}>Learning Level: {kid.currentLearningLevel}</Text>
+          </View>
+        </View>
+        <Text style={styles.kidMeta}>Enrolled Courses: {enrolledCoursesCount}</Text>
+        <Text style={styles.kidMeta}>Learning Focus: {kid.learningPathFocus?.join(', ') || 'General'}</Text>
+        <View style={styles.kidButtons}>
+          <Button 
+            size="sm"
+            style={styles.kidViewButton}
+            textStyle={styles.kidViewButtonText}
+            onPress={() => switchViewToKidAsParent(kid.id)}
+          >
+            {/* <EyeIcon style={styles.buttonIcon} />  */}
+            Kid's View
+          </Button>
+          <Button 
+            size="sm"
+            style={styles.manageKidButton}
+            textStyle={styles.manageKidButtonText}
+            onPress={() => setViewWithPath(ViewType.ParentManageKidDetail, `/parentmanagekiddetail/${kid.id}`)}
+          >
+            {/* <AdjustmentsVerticalIcon style={styles.buttonIcon} />  */}
+            Manage
+          </Button>
+        </View>
+      </Card>
     );
   };
 
-
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <Card className="mb-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Parent Dashboard</h2>
-            <p className="text-sm opacity-90">Manage your family's learning journey.</p>
-          </div>
-          <UsersIcon className="h-10 w-10 text-white/70"/>
-        </div>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Parent Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Manage your family's learning journey.</Text>
+          </View>
+          {/* <UsersIcon style={styles.headerIcon} /> */}
+          <Text>user Icon</Text>
+        </View>
       </Card>
 
-      <section className="mb-6">
-        <div className="flex justify-between items-center mb-3">
-            <h3 className="text-xl font-semibold text-gray-700">My Kids ({parentKids.length})</h3>
-            <Button 
-                size="sm" 
-                variant="primary" 
-                className="!bg-green-500 hover:!bg-green-600"
-                onClick={() => setViewWithPath(View.ParentAddKid, '/parentaddkid')}
-            >
-                <UserPlusIcon className="h-4 w-4 mr-1 inline"/> Add Kid
-            </Button>
-        </div>
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>My Kids ({parentKids.length})</Text>
+          <Button 
+            size="sm"
+            style={styles.addKidButton}
+            textStyle={styles.addKidButtonText}
+            onPress={() => setViewWithPath(ViewType.ParentAddKid, '/parentaddkid')}
+          >
+            {/* <UserPlusIcon style={styles.buttonIcon} />  */}
+            Add Kid
+          </Button>
+        </View>
         {parentKids.length === 0 ? (
-            <Card className="text-center py-6">
-                <p className="text-gray-600 mb-2">You haven't added any child profiles yet.</p>
-                <Button 
-                    variant="primary" 
-                    onClick={() => setViewWithPath(View.ParentAddKid, '/parentaddkid')}
-                >
-                    Add Your First Child
-                </Button>
-            </Card>
+          <Card style={styles.emptyKidsCard}>
+            <Text style={styles.emptyKidsText}>You haven't added any child profiles yet.</Text>
+            <Button 
+              style={styles.addFirstKidButton}
+              onPress={() => setViewWithPath(ViewType.ParentAddKid, '/parentaddkid')}
+            >
+              Add Your First Child
+            </Button>
+          </Card>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {parentKids.map(kid => <KidCard key={kid.id} kid={kid} />)}
-            </div>
+          <View style={styles.kidsGrid}>
+            {parentKids.map(kid => <KidCard key={kid.id} kid={kid} />)}
+          </View>
         )}
-      </section>
+      </View>
 
-
-      <Card className="mb-6">
-        <div className="flex items-center text-teal-600 mb-3">
-            <MagnifyingGlassIcon className="h-7 w-7 mr-2" />
-            <h3 className="text-xl font-semibold">Discover Learning Adventures</h3>
-        </div>
-        <p className="text-sm text-gray-600 mb-3">Explore structured courses and activities from verified teachers for your kids.</p>
+      <Card style={styles.discoverCard}>
+        <View style={styles.discoverHeader}>
+          {/* <MagnifyingGlassIcon style={styles.discoverIcon} /> */}
+          <Text style={styles.discoverTitle}>Discover Learning Adventures</Text>
+        </View>
+        <Text style={styles.discoverText}>Explore structured courses and activities from verified teachers for your kids.</Text>
         <Button 
-            onClick={() => setViewWithPath(View.ParentCourseDiscoveryView, '/parentcoursediscoveryview')}
-            size="md" 
-            variant="primary" 
-            className="w-full !bg-teal-500 hover:!bg-teal-600"
+          onPress={() => setViewWithPath(ViewType.ParentCourseDiscoveryView, '/parentcoursediscoveryview')}
+          size="md"
+          style={styles.discoverButton}
+          textStyle={styles.discoverButtonText}
         >
-            Find Courses & Teachers
+          Find Courses & Teachers
         </Button>
       </Card>
       
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card>
-          <div className="flex items-center text-green-600 mb-2">
-            <CreditCardIcon className="h-6 w-6 mr-2" />
-            <h3 className="text-lg font-semibold">Family Subscriptions</h3>
-          </div>
-          <p className="text-sm text-gray-600">Access premium content across all kid profiles.</p>
+      <View style={styles.gridContainer}>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridCardHeader}>
+            {/* <CreditCardIcon style={styles.gridCardIcon} /> */}
+            <Text style={styles.gridCardTitle}>Family Subscriptions</Text>
+          </View>
+          <Text style={styles.gridCardText}>Access premium content across all kid profiles.</Text>
           <Button 
-            onClick={() => setViewWithPath(View.ParentSubscriptionScreen, '/parentsubscription')}
-            size="sm" 
-            variant="primary" 
-            className="mt-3 text-sm !bg-green-500 hover:!bg-green-600"
+            onPress={() => setViewWithPath(ViewType.ParentSubscriptionScreen, '/parentsubscription')}
+            size="sm"
+            style={styles.subscriptionButton}
+            textStyle={styles.subscriptionButtonText}
           >
             Manage Subscriptions
           </Button>
         </Card>
-        <Card>
-          <div className="flex items-center text-skyBlue mb-2">
-            <ShieldCheckIcon className="h-6 w-6 mr-2" />
-            <h3 className="text-lg font-semibold">Global Parental Controls</h3>
-          </div>
-          <p className="text-sm text-gray-600">Set general app preferences. Individual kid settings are managed per profile.</p>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridCardHeader}>
+            {/* <ShieldCheckIcon style={styles.gridCardIcon} /> */}
+            <Text style={styles.gridCardTitle}>Global Parental Controls</Text>
+          </View>
+          <Text style={styles.gridCardText}>Set general app preferences. Individual kid settings are managed per profile.</Text>
           <Button 
-            onClick={() => setViewWithPath(View.Settings, '/settings')}
-            size="sm" 
-            variant="primary" 
-            className="mt-3 text-sm"
+            onPress={() => setViewWithPath(ViewType.Settings, '/settings')}
+            size="sm"
+            style={styles.settingsButton}
+            textStyle={styles.settingsButtonText}
           >
-            <Cog6ToothIcon className="h-4 w-4 mr-1 inline"/> General App Settings
+            {/* <Cog6ToothIcon style={styles.buttonIcon} />  */}
+            General App Settings
           </Button>
         </Card>
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    backgroundColor: '#f1f5f9', // slate-100
+  },
+  loadingContainer: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCard: {
+    marginBottom: 24,
+    backgroundColor: '#6366f1', // indigo-500 as base for gradient
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#334155', // gray-700
+  },
+  addKidButton: {
+    backgroundColor: '#22c55e', // green-500
+  },
+  addKidButtonText: {
+    color: 'white',
+  },
+  emptyKidsCard: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  emptyKidsText: {
+    color: '#4b5563', // gray-600
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  addFirstKidButton: {
+    backgroundColor: '#22c55e', // green-500
+  },
+  kidsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  kidCard: {
+    width: '48%',
+    padding: 12,
+  },
+  kidCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatarContainer: {
+    backgroundColor: '#e0f2fe', // sky-100
+    borderRadius: 100,
+    padding: 4,
+    marginRight: 12,
+  },
+  avatarText: {
+    fontSize: 32,
+  },
+  kidInfo: {
+    flex: 1,
+  },
+  kidName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0369a1', // sky-700
+  },
+  kidDetail: {
+    fontSize: 10,
+    color: '#6b7280', // gray-500
+  },
+  kidMeta: {
+    fontSize: 10,
+    color: '#4b5563', // gray-600
+    marginBottom: 4,
+  },
+  kidButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  kidViewButton: {
+    flex: 1,
+    marginRight: 4,
+    backgroundColor: '#0ea5e9', // sky-500
+  },
+  kidViewButtonText: {
+    fontSize: 10,
+    color: 'white',
+  },
+  manageKidButton: {
+    flex: 1,
+    marginLeft: 4,
+    borderWidth: 1,
+    borderColor: '#bae6fd', // sky-200
+    backgroundColor: 'transparent',
+  },
+  manageKidButtonText: {
+    fontSize: 10,
+    color: '#0284c7', // sky-600
+  },
+  buttonIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 4,
+    color: 'white',
+  },
+  discoverCard: {
+    marginBottom: 24,
+    padding: 16,
+  },
+  discoverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  discoverIcon: {
+    width: 28,
+    height: 28,
+    color: '#0d9488', // teal-600
+    marginRight: 8,
+  },
+  discoverTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0d9488', // teal-600
+  },
+  discoverText: {
+    fontSize: 12,
+    color: '#4b5563', // gray-600
+    marginBottom: 12,
+  },
+  discoverButton: {
+    backgroundColor: '#0d9488', // teal-500
+  },
+  discoverButtonText: {
+    color: 'white',
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 24,
+  },
+  gridCard: {
+    width: '48%',
+    padding: 12,
+  },
+  gridCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  gridCardIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 8,
+  },
+  gridCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  gridCardText: {
+    fontSize: 12,
+    color: '#4b5563', // gray-600
+    marginBottom: 12,
+  },
+  subscriptionButton: {
+    backgroundColor: '#22c55e', // green-500
+  },
+  subscriptionButtonText: {
+    fontSize: 12,
+    color: 'white',
+  },
+  settingsButton: {
+    backgroundColor: '#0ea5e9', // sky-500
+  },
+  settingsButtonText: {
+    fontSize: 12,
+    color: 'white',
+  },
+});
 
 export default ParentDashboardScreen;

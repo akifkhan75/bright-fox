@@ -1,14 +1,19 @@
-
 import React, { useContext } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppContext } from '../App';
-import { View, UserRole } from '../types';
+import { View as ViewType, UserRole } from '../types';
 import Button from '../components/Button';
 import { APP_NAME } from '../constants';
-import { UserIcon, AcademicCapIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'; 
 import Card from '../components/Card';
+// Import icons from a React Native library
+
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
 const RoleSelectionScreen: React.FC = () => {
   const context = useContext(AppContext);
+  const navigation = useNavigation();
 
   if (!context) return null;
   const { setViewWithPath, setAppState } = context;
@@ -16,56 +21,150 @@ const RoleSelectionScreen: React.FC = () => {
   const handleRoleSelect = (role: UserRole) => {
     if (role === UserRole.Parent) {
       setAppState(prev => ({ ...prev, currentUserRole: UserRole.Parent }));
-      setViewWithPath(View.Login, '/login?role=Parent');
+      navigation.navigate('Login', { role: UserRole.Parent });
     } else if (role === UserRole.Teacher) {
       setAppState(prev => ({ ...prev, currentUserRole: UserRole.Teacher }));
-      setViewWithPath(View.Login, '/login?role=Teacher');
+      navigation.navigate('Login', { role: UserRole.Teacher });
     }
-    // Kid selection is removed from here. Access is through parent.
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-teal-400 via-cyan-500 to-sky-600 p-6 text-white text-center">
-      <img src="https://picsum.photos/seed/brightfoxV2roles/120/120" alt={`${APP_NAME} Mascot`} className="w-28 h-28 rounded-full mb-4 shadow-xl border-4 border-white" />
-      <h1 className="text-4xl md:text-5xl font-bold font-display mb-3">Welcome to {APP_NAME}!</h1>
-      <p className="text-lg md:text-xl mb-10">Who are you?</p>
+    <View style={styles.container}>
+      <Image 
+        source={{ uri: 'https://picsum.photos/seed/brightfoxV2roles/120/120' }}
+        style={styles.logo}
+      />
+      <Text style={styles.title}>Welcome to {APP_NAME}!</Text>
+      <Text style={styles.subtitle}>Who are you?</Text>
 
-      <div className="space-y-5 w-full max-w-sm">
-        {/* "I'm a Kid" button removed for V5 */}
-        
-        <Card className="!bg-white/20 hover:!bg-white/30 !backdrop-blur-sm !p-0">
-            <Button 
-            onClick={() => handleRoleSelect(UserRole.Parent)} 
-            size="lg" 
-            fullWidth 
-            className="!bg-transparent !shadow-none !text-white !py-6 !rounded-xl group"
-            >
-            <div className="flex items-center justify-center">
-                <ShieldCheckIcon className="h-10 w-10 mr-4 text-pink-300 group-hover:scale-110 transition-transform" />
-                <span className="font-kidFriendly text-2xl">I'm a Parent</span>
-            </div>
-            </Button>
+      <View style={styles.buttonsContainer}>
+        {/* Parent Button */}
+        <Card style={styles.cardButton}>
+          <Button
+            onPress={() => handleRoleSelect(UserRole.Parent)}
+            style={styles.roleButton}
+            textStyle={styles.roleButtonText}
+          >
+            <View style={styles.buttonContent}>
+              <Icon 
+                name="shield-check" 
+                size={40} 
+                color="#f9a8d4" // pink-300
+                style={styles.buttonIcon}
+              />
+              <Text style={styles.buttonLabel}>I'm a Parent</Text>
+            </View>
+          </Button>
         </Card>
 
-        <Card className="!bg-white/20 hover:!bg-white/30 !backdrop-blur-sm !p-0">
-            <Button 
-            onClick={() => handleRoleSelect(UserRole.Teacher)} 
-            size="lg" 
-            fullWidth 
-            className="!bg-transparent !shadow-none !text-white !py-6 !rounded-xl group"
-            >
-            <div className="flex items-center justify-center">
-                <AcademicCapIcon className="h-10 w-10 mr-4 text-green-300 group-hover:scale-110 transition-transform" />
-                <span className="font-kidFriendly text-2xl">I'm a Teacher</span>
-            </div>
-            </Button>
+        {/* Teacher Button */}
+        <Card style={styles.cardButton}>
+          <Button
+            onPress={() => handleRoleSelect(UserRole.Teacher)}
+            style={styles.roleButton}
+            textStyle={styles.roleButtonText}
+          >
+            <View style={styles.buttonContent}>
+              <MaterialIcons 
+                name="school" 
+                size={40} 
+                color="#86efac" // green-300
+                style={styles.buttonIcon}
+              />
+              <Text style={styles.buttonLabel}>I'm a Teacher</Text>
+            </View>
+          </Button>
         </Card>
-      </div>
-      <p className="mt-10 text-xs text-white/70">
+      </View>
+
+      <Text style={styles.footerText}>
         Select your role to start your learning adventure or creation journey!
-      </p>
-    </div>
+      </Text>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#2dd4bf', // teal-400 as base color
+    // For gradient: You'll need react-native-linear-gradient
+    // backgroundImage: 'linear-gradient(to bottom right, #2dd4bf, #06b6d4, #0284c7)'
+  },
+  logo: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    marginBottom: 16,
+    borderWidth: 4,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
+    // fontFamily: 'YourDisplayFont',
+  },
+  subtitle: {
+    fontSize: 20,
+    color: 'white',
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  buttonsContainer: {
+    width: '100%',
+    maxWidth: 384, // max-w-sm
+    gap: 20,
+  },
+  cardButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backdropFilter: 'blur(10px)', // Not supported in RN - alternative below
+    borderRadius: 12,
+    overflow: 'hidden',
+    // For blur effect on iOS:
+    // ios: {
+    //   backdropFilter: 'blur(10px)',
+    // }
+    // Android may need a different approach
+  },
+  roleButton: {
+    backgroundColor: 'transparent',
+    shadowColor: 'transparent',
+    paddingVertical: 24,
+    borderRadius: 12,
+  },
+  roleButtonText: {
+    color: 'white',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 16,
+  },
+  buttonLabel: {
+    fontSize: 24,
+    color: 'white',
+    // fontFamily: 'KidFriendly',
+  },
+  footerText: {
+    marginTop: 40,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+  },
+});
 
 export default RoleSelectionScreen;

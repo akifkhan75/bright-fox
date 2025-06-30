@@ -1,17 +1,18 @@
-
 import React, { useState, useContext, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { View as RNView, Text, TextInput, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../App';
 import { View, UserRole, TeacherProfile, AdminProfile } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import { APP_NAME, DEFAULT_KID_PROFILE, DEFAULT_TEACHER_PROFILE, DEFAULT_PARENTAL_CONTROLS, DEFAULT_ADMIN_PROFILE } from '../constants';
-import { ArrowLeftIcon } from '@heroicons/react/24/solid';
+import { APP_NAME, DEFAULT_TEACHER_PROFILE, DEFAULT_ADMIN_PROFILE } from '../constants';
+// import { ArrowLeftIcon } from 'react-native-vector-icons';
+import LinearGradient from 'react-native-linear-gradient';
 
 const LoginScreen: React.FC = () => {
   const context = useContext(AppContext);
-  const location = useLocation();
-  const navigate = useNavigate(); 
+  const navigation = useNavigation();
+  const route = useRoute();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,21 +20,20 @@ const LoginScreen: React.FC = () => {
   const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const roleFromQuery = queryParams.get('role') as UserRole;
-    if (roleFromQuery && Object.values(UserRole).includes(roleFromQuery)) {
-      setRole(roleFromQuery);
+    // In React Native, you might get the role from navigation params
+    // const roleFromParams = navigation.getParam('role');
+    const roleFromParams = route.params?.role;
+    if (roleFromParams && Object.values(UserRole).includes(roleFromParams)) {
+      setRole(roleFromParams);
     } else {
       context?.setViewWithPath(View.RoleSelection, '/roleselection', {replace: true});
     }
-  }, [location.search, context]);
-
+  }, [navigation, context]);
 
   if (!context) return null;
   const { appState, setAppState, setViewWithPath, setTeacherProfile, setAllTeacherProfiles, allTeacherProfiles, setAdminProfile } = context;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     setError('');
 
     // Mock Login Logic
@@ -85,69 +85,198 @@ const LoginScreen: React.FC = () => {
             ...prev,
             currentUserRole: UserRole.Admin,
             currentAdminProfileId: adminId,
-            adminProfile: newAdminProfile // Also store in appState for persistence
+            adminProfile: newAdminProfile
         }));
         setViewWithPath(View.AdminDashboard, '/admindashboard', {replace: true});
     } else {
       setError("Invalid email or password. (Hint: test@example.com / password or admin@example.com / password for Admin)");
     }
   };
-  
+
   if (!role) {
-    return <div className="p-4 text-center">Loading login screen...</div>;
+    return (
+      <RNView style={styles.loadingContainer}>
+        <Text>Loading login screen...</Text>
+      </RNView>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 p-4 md:p-6 flex flex-col items-center justify-center">
-      <Card className="w-full max-w-sm">
-         <button 
-            onClick={() => setViewWithPath(View.RoleSelection, '/roleselection')} 
-            className="absolute top-4 left-4 text-gray-600 hover:text-gray-800"
-            aria-label="Go back to role selection"
+    <LinearGradient 
+      colors={['#818cf8', '#a855f7', '#ec4899']} 
+      style={styles.container}
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 1}}
+    >
+      <Card style={styles.card}>
+        <TouchableOpacity 
+          onPress={() => setViewWithPath(View.RoleSelection, '/roleselection')} 
+          style={styles.backButton}
+          accessibilityLabel="Go back to role selection"
         >
-            <ArrowLeftIcon className="h-6 w-6"/>
-        </button>
-        <div className="text-center mb-6">
-            <img src={`https://picsum.photos/seed/${role}LoginIcon/80/80`} alt={`${role} Login Icon`} className="w-20 h-20 rounded-full mx-auto mb-3 shadow-lg border-2 border-indigo-300" />
-            <h2 className="text-2xl font-bold text-indigo-700 font-display">{role} Login</h2>
-            <p className="text-sm text-gray-500">Welcome back to {APP_NAME}!</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              id="email"
+          {/* <ArrowLeftIcon size={24} color="#4b5563" /> */}
+        </TouchableOpacity>
+        
+        <RNView style={styles.header}>
+          <Image 
+            source={{ uri: `https://picsum.photos/seed/${role}LoginIcon/160/160` }}
+            style={styles.avatar}
+          />
+          <Text style={styles.title}>{role} Login</Text>
+          <Text style={styles.subtitle}>Welcome back to {APP_NAME}!</Text>
+        </RNView>
+
+        <RNView style={styles.form}>
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChangeText={setEmail}
               placeholder="you@example.com"
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
               required
-              placeholder="••••••••"
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
             />
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" fullWidth size="lg" className="!font-kidFriendly !text-xl bg-indigo-600 hover:bg-indigo-700">
+          </RNView>
+
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              secureTextEntry
+              required
+            />
+          </RNView>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Button 
+            onPress={handleSubmit}
+            style={styles.loginButton}
+            textStyle={styles.loginButtonText}
+          >
             Log In
           </Button>
-        </form>
-        <p className="text-xs text-gray-500 mt-4 text-center">
-          Don't have an account? <a href="#" className="text-indigo-600 hover:underline" onClick={(e) => { e.preventDefault(); alert('Sign up is not implemented in this demo.'); }}>Sign up (demo)</a>
-        </p>
+
+          <TouchableOpacity 
+            onPress={() => alert('Sign up is not implemented in this demo.')}
+            style={styles.signupLink}
+          >
+            <Text style={styles.signupText}>
+              Don't have an account? <Text style={styles.signupHighlight}>Sign up (demo)</Text>
+            </Text>
+          </TouchableOpacity>
+        </RNView>
       </Card>
-    </div>
+    </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 24,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    padding: 8,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#a5b4fc',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3730a3',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  form: {
+    marginTop: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  error: {
+    color: '#ef4444',
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#4f46e5',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  signupLink: {
+    marginTop: 16,
+  },
+  signupText: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  signupHighlight: {
+    color: '#4f46e5',
+    fontWeight: '500',
+  },
+});
 
 export default LoginScreen;

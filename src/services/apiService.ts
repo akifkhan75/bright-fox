@@ -2,6 +2,7 @@
 // frontend/src/services/apiService.ts
 // Ensure this path is correct based on your React Native project structure.
 // Usually, it would be something like 'src/types' if App.tsx is at the root.
+import { Platform } from 'react-native';
 import { TeacherProfile, Course, Activity, ActivityStatus } from '../types';
 
 // For React Native development:
@@ -9,7 +10,13 @@ import { TeacherProfile, Course, Activity, ActivityStatus } from '../types';
 // - If using a physical Android device or iOS simulator/device, replace 'localhost' with your computer's local IP address.
 //   (e.g., 'http://192.168.1.100:3001/api'). Ensure both devices are on the same network.
 // - For production, this would be your deployed backend URL.
-const API_BASE_URL = 'http://localhost:3001/api'; // ADJUST FOR YOUR RN DEV ENVIRONMENT
+//const API_BASE_URL = 'http://localhost:3001/api'; // ADJUST FOR YOUR RN DEV ENVIRONMENT
+
+const API_BASE_URL = Platform.select({
+  ios: 'http://localhost:3002/api',
+  android: 'http://10.0.2.2:3002/api',
+  default: 'http://your-production-api.com/api'
+});
 
 // --- Generic Fetch Wrapper ---
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

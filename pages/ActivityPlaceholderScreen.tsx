@@ -1,35 +1,86 @@
-
 import React from 'react';
-import { useLocation } from 'react-router-dom'; // Added
-import Card from '../components/Card';
-import { PuzzlePieceIcon } from '@heroicons/react/24/solid'; // Example icon
+import { View, Text, Image, StyleSheet } from 'react-native';
+import Card from '../components/Card'; // Make sure this is a React Native component
+// import PuzzlePieceIcon from '../assets/icons/PuzzlePieceIcon'; // You'll need to provide this icon
 
 interface ActivityPlaceholderScreenProps {
-  activityName?: string; // Prop is now optional, primarily use location.state
+  activityName?: string;
 }
 
 const ActivityPlaceholderScreen: React.FC<ActivityPlaceholderScreenProps> = ({ activityName: propActivityName }) => {
-  const location = useLocation();
-  const activityNameFromState = location.state?.activityName as string | undefined;
-  
-  // Prioritize state, then prop, then fallback
-  const activityName = activityNameFromState || propActivityName || "Awesome Activity";
+  const activityName = propActivityName || "Awesome Activity";
 
   return (
-    <div className="p-4 md:p-8 flex flex-col items-center justify-center text-center min-h-full bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200">
-      <Card className="max-w-md w-full">
-        <PuzzlePieceIcon className="h-20 w-20 text-indigo-400 mx-auto mb-6" />
-        <h2 className="text-3xl font-bold text-indigo-600 mb-3 font-display">{activityName}</h2>
-        <p className="text-gray-600 mb-6 text-lg">
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        <View style={styles.iconContainer}>
+          <Text>Icon</Text>
+          {/* <PuzzlePieceIcon width={80} height={80} fill="#818cf8" /> */}
+        </View>
+        <Text style={styles.title}>{activityName}</Text>
+        <Text style={styles.subtitle}>
           This fun activity is under construction! 🚧
-        </p>
-        <p className="text-gray-500 text-sm">
+        </Text>
+        <Text style={styles.description}>
           Our little helpers are working hard to bring you exciting new games and learning experiences. Check back soon!
-        </p>
-        <img src="https://picsum.photos/seed/constructionfox/300/200" alt="Cute animal under construction" className="mt-6 rounded-lg shadow-md mx-auto"/>
+        </Text>
+        <Image
+          source={{ uri: 'https://picsum.photos/seed/constructionfox/300/200' }}
+          style={styles.image}
+        />
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    paddingVertical: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e0e7ff', // indigo-200 equivalent
+    // For gradient background, you might need a separate package like react-native-linear-gradient
+  },
+  card: {
+    maxWidth: 448, // max-w-md equivalent
+    width: '100%',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#4f46e5', // indigo-600
+    marginBottom: 12,
+    textAlign: 'center',
+    // fontFamily: 'YourDisplayFont', // Add your custom font if needed
+  },
+  subtitle: {
+    color: '#4b5563', // gray-600
+    fontSize: 18,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  description: {
+    color: '#6b7280', // gray-500
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  image: {
+    marginTop: 24,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    width: 300,
+    height: 200,
+    alignSelf: 'center',
+  },
+});
 
 export default ActivityPlaceholderScreen;

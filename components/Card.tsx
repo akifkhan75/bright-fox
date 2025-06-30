@@ -1,22 +1,52 @@
-
 import React from 'react';
+import { TouchableOpacity, View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 
 interface CardProps {
   children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
+  style?: StyleProp<ViewStyle>;
+  onPress?: () => void;
 }
 
-const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => {
-  const clickableStyles = onClick ? 'cursor-pointer hover:shadow-xl transition-shadow duration-200' : '';
+const Card: React.FC<CardProps> = ({ children, style, onPress }) => {
+  const cardStyles: StyleProp<ViewStyle> = [
+    styles.card,
+    onPress ? styles.clickable : {},
+    style,
+  ];
+
+  if (onPress) {
+    return (
+      <TouchableOpacity style={cardStyles} onPress={onPress}>
+        {children}
+      </TouchableOpacity>
+    );
+  }
+
   return (
-    <div
-      className={`bg-white rounded-xl shadow-lg p-4 md:p-6 ${clickableStyles} ${className}`}
-      onClick={onClick}
-    >
+    <View style={cardStyles}>
       {children}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    padding: 16,
+  },
+  clickable: {
+    // React Native doesn't have exact hover equivalents, but you can add pressed state styles
+    // or use TouchableOpacity's built-in opacity effect
+  },
+});
 
 export default Card;

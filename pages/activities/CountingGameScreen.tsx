@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { CalculatorIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+// import { CalculatorIcon, CheckCircleIcon, XCircleIcon } from './icons'; // You'll need to create or import these icons
 
 const CountingGameScreen: React.FC = () => {
   const [targetCount, setTargetCount] = useState(0);
@@ -40,48 +41,169 @@ const CountingGameScreen: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-orange-200 via-amber-200 to-yellow-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-md w-full text-center">
-        <CalculatorIcon className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-orange-700 mb-1 font-display">Counting Fun!</h2>
-        <p className="text-gray-600 mb-4">How many apples can you count?</p>
-        <p className="text-sm text-gray-500 mb-4">Score: <span className="font-bold">{score}</span></p>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        {/* <CalculatorIcon style={styles.icon} /> */}
+        <Text style={styles.title}>Counting Fun!</Text>
+        <Text style={styles.subtitle}>How many apples can you count?</Text>
+        <Text style={styles.scoreText}>Score: <Text style={styles.scoreValue}>{score}</Text></Text>
 
         {/* Display Items to Count */}
-        <div className="flex flex-wrap justify-center items-center bg-gray-100 p-4 rounded-lg mb-6 min-h-[100px] shadow-inner">
+        <View style={styles.appleContainer}>
           {Array.from({ length: targetCount }).map((_, index) => (
-            <span key={index} className="text-4xl m-1" role="img" aria-label="apple">🍎</span>
+            <Text key={index} style={styles.appleEmoji} accessibilityLabel="apple">🍎</Text>
           ))}
-        </div>
+        </View>
 
         {/* Options */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <View style={styles.optionsContainer}>
           {options.map(opt => (
             <Button 
               key={opt} 
-              onClick={() => handleOptionClick(opt)}
-              className="!text-2xl !py-4 bg-orange-500 hover:bg-orange-600 font-kidFriendly"
+              onPress={() => handleOptionClick(opt)}
+              style={styles.optionButton}
+              textStyle={styles.optionButtonText}
               disabled={!!feedback}
             >
               {opt}
             </Button>
           ))}
-        </div>
+        </View>
         
         {feedback && (
-            <Card className={`!p-3 ${feedback.correct ? '!bg-green-100 text-green-700' : '!bg-red-100 text-red-700'}`}>
-                <div className="flex items-center justify-center">
-                    {feedback.correct ? <CheckCircleIcon className="h-6 w-6 mr-2"/> : <XCircleIcon className="h-6 w-6 mr-2"/>}
-                    <p className="font-semibold">{feedback.message}</p>
-                </div>
-            </Card>
+          <Card style={[
+            styles.feedbackCard,
+            feedback.correct ? styles.correctFeedback : styles.incorrectFeedback
+          ]}>
+            <View style={styles.feedbackContent}>
+              {feedback.correct ? (
+                // <CheckCircleIcon style={styles.feedbackIcon} />
+                <Text>check circle</Text>
+              ) : (
+                // <XCircleIcon style={styles.feedbackIcon} />
+                <Text>x circle</Text>
+              )}
+              <Text style={styles.feedbackText}>{feedback.message}</Text>
+            </View>
+          </Card>
         )}
 
-        {!feedback && <div className="h-[52px]"></div> /* Placeholder for feedback height */}
-        
+        {!feedback && <View style={styles.feedbackPlaceholder} />}
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fed7aa', // orange-200 as base for gradient
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    color: '#ea580c', // orange-600
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#c2410c', // orange-700
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4b5563', // gray-600
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  scoreText: {
+    fontSize: 14,
+    color: '#6b7280', // gray-500
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  scoreValue: {
+    fontWeight: 'bold',
+  },
+  appleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6', // gray-100
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    minHeight: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  appleEmoji: {
+    fontSize: 36,
+    margin: 4,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  optionButton: {
+    flex: 1,
+    minWidth: 80,
+    backgroundColor: '#f97316', // orange-500
+    paddingVertical: 16,
+  },
+  optionButtonText: {
+    fontSize: 24,
+    color: 'white',
+  },
+  feedbackCard: {
+    padding: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  correctFeedback: {
+    backgroundColor: '#dcfce7', // green-100
+  },
+  incorrectFeedback: {
+    backgroundColor: '#fee2e2', // red-100
+  },
+  feedbackContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feedbackIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 8,
+  },
+  feedbackText: {
+    fontWeight: '600',
+  },
+  correctFeedbackText: {
+    color: '#166534', // green-700
+  },
+  incorrectFeedbackText: {
+    color: '#991b1b', // red-700
+  },
+  feedbackPlaceholder: {
+    height: 52,
+  },
+});
 
 export default CountingGameScreen;

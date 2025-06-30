@@ -1,10 +1,14 @@
-
 import React, { useContext } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppContext } from '../../App';
-import { UserRole, View } from '../../types';
+import { UserRole, View as ViewType } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { StarIcon, SparklesIcon, CalendarDaysIcon, CheckIcon } from '@heroicons/react/24/solid';
+// import StarIcon from '../../assets/icons/StarIcon';
+// import SparklesIcon from '../../assets/icons/SparklesIcon';
+// import CalendarDaysIcon from '../../assets/icons/CalendarDaysIcon';
+// import CheckIcon from '../../assets/icons/CheckIcon';
+import { useNavigation } from '@react-navigation/native';
 
 interface SubscriptionTier {
   id: string;
@@ -12,8 +16,8 @@ interface SubscriptionTier {
   price: string;
   billingCycle: string;
   features: string[];
-  icon: React.ElementType;
-  color: string; // Tailwind bg color for button
+  icon: React.ElementType | string;
+  color: string;
   highlight?: boolean;
 }
 
@@ -24,8 +28,8 @@ const tiers: SubscriptionTier[] = [
     price: '$0',
     billingCycle: 'Always Free',
     features: ['Access to basic activities', 'Limited Draw & Tell stories', 'Limited Why Zone questions'],
-    icon: SparklesIcon,
-    color: 'bg-gray-400 hover:bg-gray-500',
+    icon: 'SparklesIcon',
+    color: 'bg-gray-400',
   },
   {
     id: 'monthly',
@@ -33,8 +37,8 @@ const tiers: SubscriptionTier[] = [
     price: '$7.99',
     billingCycle: '/ month',
     features: ['All Free Explorer features', 'Unlimited access to all activities', 'Unlimited AI stories & Q&A', 'Unlock premium courses', 'Detailed progress reports'],
-    icon: StarIcon,
-    color: 'bg-sky-500 hover:bg-sky-600',
+    icon: 'StarIcon',
+    color: 'bg-sky-500',
     highlight: true,
   },
   {
@@ -43,79 +47,233 @@ const tiers: SubscriptionTier[] = [
     price: '$69.99',
     billingCycle: '/ year (Save 25%)',
     features: ['All Premium Monthly features', 'Priority support', 'Early access to new features'],
-    icon: CalendarDaysIcon,
-    color: 'bg-purple-500 hover:bg-purple-600',
+    icon: 'CalendarDaysIcon',
+    color: 'bg-purple-500',
   },
 ];
 
 const ParentSubscriptionScreen: React.FC = () => {
   const context = useContext(AppContext);
+  const navigation = useNavigation();
 
   if (!context || context.appState.currentUserRole !== UserRole.Parent) {
-    context?.setViewWithPath(View.Login, '/login?role=Parent', { replace: true });
-    return <div className="p-4 text-center">Access Denied.</div>;
+    navigation.navigate('Login', { role: 'Parent' });
+    return (
+      <View style={styles.deniedContainer}>
+        <Text>Access Denied.</Text>
+      </View>
+    );
   }
   
   const currentSubscription = "Free Explorer"; // Mock
 
   const handleChoosePlan = (tierId: string) => {
     alert(`Choosing plan: ${tierId} (Mock functionality - Stripe integration needed)`);
-    // In a real app, this would initiate the payment process.
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-sky-100 via-indigo-100 to-purple-100 min-h-full">
-      <Card className="max-w-xl mx-auto mb-6 !bg-transparent !shadow-none">
-        <div className="text-center">
-            <StarIcon className="h-12 w-12 text-yellow-400 mx-auto mb-3"/>
-            <h1 className="text-3xl font-bold text-gray-800 font-display">Unlock Premium Adventures!</h1>
-            <p className="text-gray-600 mt-2">Choose the best plan for your family and supercharge your child's learning journey.</p>
-        </div>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <StarIcon width={48} height={48} fill="#facc15" style={styles.headerIcon} />
+          <Text style={styles.headerTitle}>Unlock Premium Adventures!</Text>
+          <Text style={styles.headerSubtitle}>
+            Choose the best plan for your family and supercharge your child's learning journey.
+          </Text>
+        </View>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {tiers.map(tier => (
-          <Card key={tier.id} className={`flex flex-col !shadow-xl hover:!shadow-2xl transition-shadow ${tier.highlight ? 'border-4 border-yellow-400' : 'border border-gray-200'}`}>
-            <div className="p-6">
-                <div className="flex items-center mb-3">
-                    <tier.icon className={`h-8 w-8 mr-3 ${tier.highlight ? 'text-yellow-500' : 'text-sky-500'}`} />
-                    <h2 className="text-xl font-semibold text-gray-800">{tier.name}</h2>
-                </div>
-                <p className="text-3xl font-bold text-gray-900 mb-1">{tier.price} <span className="text-sm font-normal text-gray-500">{tier.billingCycle}</span></p>
-                {tier.highlight && <p className="text-xs text-yellow-600 font-semibold mb-3">Most Popular!</p>}
-                
-                <ul className="space-y-2 text-sm text-gray-600 my-6">
-                {tier.features.map(feature => (
-                    <li key={feature} className="flex items-start">
-                    <CheckIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5_ flex-shrink-0" />
-                    <span>{feature}</span>
-                    </li>
-                ))}
-                </ul>
-            </div>
-            <div className="mt-auto p-6 pt-0">
-                {currentSubscription === tier.name ? (
-                     <Button fullWidth disabled className="!bg-gray-300 !text-gray-500 cursor-not-allowed">
-                        Current Plan
-                    </Button>
-                ) : (
-                    <Button 
-                        onClick={() => handleChoosePlan(tier.id)} 
-                        fullWidth 
-                        className={`${tier.color} !font-semibold`}
-                    >
-                        Choose {tier.name.split(' ')[0]}
-                    </Button>
+      <View style={styles.tiersContainer}>
+        {tiers.map(tier => {
+          const Icon = tier.icon;
+          return (
+            <Card 
+              key={tier.id} 
+              style={[
+                styles.tierCard,
+                tier.highlight && styles.highlightedTierCard
+              ]}
+            >
+              <View style={styles.tierContent}>
+                <View style={styles.tierHeader}>
+                  <Icon width={32} height={32} fill={tier.highlight ? "#facc15" : "#0ea5e9"} />
+                  <Text style={styles.tierName}>{tier.name}</Text>
+                </View>
+                <Text style={styles.tierPrice}>
+                  {tier.price} <Text style={styles.tierBillingCycle}>{tier.billingCycle}</Text>
+                </Text>
+                {tier.highlight && (
+                  <Text style={styles.popularBadge}>Most Popular!</Text>
                 )}
-            </div>
-          </Card>
-        ))}
-      </div>
-      <p className="text-center text-xs text-gray-500 mt-8">
+                
+                <View style={styles.featuresList}>
+                  {tier.features.map(feature => (
+                    <View key={feature} style={styles.featureItem}>
+                      <CheckIcon width={16} height={16} fill="#10b981" />
+                      <Text style={styles.featureText}>{feature}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              
+              <View style={styles.tierFooter}>
+                {currentSubscription === tier.name ? (
+                  <Button 
+                    style={styles.currentPlanButton}
+                    textStyle={styles.currentPlanButtonText}
+                    disabled
+                  >
+                    Current Plan
+                  </Button>
+                ) : (
+                  <Button 
+                    onPress={() => handleChoosePlan(tier.id)}
+                    style={[
+                      styles.chooseButton,
+                      { backgroundColor: tier.color === 'bg-sky-500' ? '#0ea5e9' : 
+                                        tier.color === 'bg-purple-500' ? '#8b5cf6' : '#9ca3af' }
+                    ]}
+                  >
+                    Choose {tier.name.split(' ')[0]}
+                  </Button>
+                )}
+              </View>
+            </Card>
+          );
+        })}
+      </View>
+
+      <Text style={styles.footerText}>
         Subscriptions can be managed or canceled anytime from your account settings. All prices are in USD.
-      </p>
-    </div>
+      </Text>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 32,
+    backgroundColor: '#e0f2fe',
+  },
+  deniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  headerCard: {
+    backgroundColor: 'transparent',
+    shadowColor: 'transparent',
+    elevation: 0,
+    marginBottom: 24,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#475569',
+    textAlign: 'center',
+  },
+  tiersContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 24,
+  },
+  tierCard: {
+    width: '100%',
+    maxWidth: 350,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
+    flex: 1,
+    minWidth: 300,
+  },
+  highlightedTierCard: {
+    borderWidth: 4,
+    borderColor: '#facc15',
+  },
+  tierContent: {
+    padding: 24,
+  },
+  tierHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tierName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginLeft: 12,
+  },
+  tierPrice: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  tierBillingCycle: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    color: '#64748b',
+  },
+  popularBadge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#92400e',
+    marginBottom: 16,
+  },
+  featuresList: {
+    marginVertical: 16,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#475569',
+    marginLeft: 8,
+    flex: 1,
+  },
+  tierFooter: {
+    padding: 24,
+    paddingTop: 0,
+  },
+  currentPlanButton: {
+    backgroundColor: '#e5e7eb',
+  },
+  currentPlanButtonText: {
+    color: '#6b7280',
+  },
+  chooseButton: {
+    paddingVertical: 12,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+});
 
 export default ParentSubscriptionScreen;

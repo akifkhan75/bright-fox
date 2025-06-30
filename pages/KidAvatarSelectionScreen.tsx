@@ -1,7 +1,7 @@
-
 import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { AppContext } from '../App';
-import { View, UserRole } from '../types';
+import { View as ViewType, UserRole } from '../types';
 import Button from '../components/Button';
 import { AVATARS } from '../constants';
 import Card from '../components/Card';
@@ -23,10 +23,13 @@ const KidAvatarSelectionScreen: React.FC = () => {
   if (!context || !kidProfile || !parentalControls || appState?.currentUserRole !== UserRole.Parent) {
       // If a kid somehow lands here, or parent context is lost, redirect.
       // This screen is primarily parent-driven for avatar changes.
-      context?.setViewWithPath(View.ParentDashboard, '/parentdashboard', {replace: true});
-      return <div className="p-4 text-center">Loading or invalid access...</div>;
+      context?.setViewWithPath(ViewType.ParentDashboard, '/parentdashboard', {replace: true});
+      return (
+        <View style={styles.loadingContainer}>
+          <Text>Loading or invalid access...</Text>
+        </View>
+      );
   }
-
 
   const confirmAvatar = () => {
     if (updateKidProfileAndControls) {
@@ -34,57 +37,163 @@ const KidAvatarSelectionScreen: React.FC = () => {
             { ...kidProfile, avatar: selectedAvatar },
             parentalControls 
         );
-        alert("Avatar updated!");
+        Alert.alert("Success", "Avatar updated!");
         // Navigate back to the kid's detail management screen
-        setViewWithPath(View.ParentManageKidDetail, `/parentmanagekiddetail/${kidProfile.id}`);
+        setViewWithPath(ViewType.ParentManageKidDetail, `/parentmanagekiddetail/${kidProfile.id}`);
     }
   };
 
   const handleGoBack = () => {
     // Navigate back to the kid's detail management screen
-    setViewWithPath(View.ParentManageKidDetail, `/parentmanagekiddetail/${kidProfile.id}`);
+    setViewWithPath(ViewType.ParentManageKidDetail, `/parentmanagekiddetail/${kidProfile.id}`);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-300 via-teal-400 to-cyan-500 p-4 md:p-6 flex flex-col items-center justify-center pt-10">
-      <Card className="w-full max-w-sm text-center">
-        <h2 className="text-3xl font-bold text-teal-600 mb-2 font-kidFriendly">Choose Avatar for {kidProfile.name}</h2>
-        <p className="text-gray-600 mb-6">Pick an avatar that {kidProfile.name} will love!</p>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.card}>
+        <Text style={styles.title}>Choose Avatar for {kidProfile.name}</Text>
+        <Text style={styles.subtitle}>Pick an avatar that {kidProfile.name} will love!</Text>
         
-        <div className="my-6 text-7xl p-4 bg-white rounded-full inline-block shadow-lg border-4 border-teal-400">
-          {selectedAvatar}
-        </div>
+        <View style={styles.selectedAvatarContainer}>
+          <Text style={styles.selectedAvatar}>{selectedAvatar}</Text>
+        </View>
 
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mb-8">
+        <View style={styles.avatarsGrid}>
           {AVATARS.map(avatar => (
-            <button
+            <TouchableOpacity
               key={avatar}
-              onClick={() => setSelectedAvatar(avatar)}
-              className={`p-3 text-4xl rounded-xl transition-all duration-150 transform hover:scale-110
-                ${selectedAvatar === avatar 
-                  ? 'bg-teal-400 ring-4 ring-teal-200 shadow-lg' 
-                  : 'bg-gray-100 hover:bg-gray-200'}`}
-              aria-label={`Select avatar ${avatar}`}
+              onPress={() => setSelectedAvatar(avatar)}
+              style={[
+                styles.avatarButton,
+                selectedAvatar === avatar 
+                  ? styles.selectedAvatarButton 
+                  : styles.unselectedAvatarButton
+              ]}
+              accessibilityLabel={`Select avatar ${avatar}`}
             >
-              {avatar}
-            </button>
+              <Text style={styles.avatarText}>{avatar}</Text>
+            </TouchableOpacity>
           ))}
-        </div>
+        </View>
 
-        <Button onClick={confirmAvatar} fullWidth size="lg" className="!font-kidFriendly !text-xl bg-teal-500 hover:bg-teal-600">
+        <Button 
+          onPress={confirmAvatar} 
+          fullWidth 
+          size="lg" 
+          style={styles.confirmButton}
+          textStyle={styles.confirmButtonText}
+        >
           Set This Avatar
         </Button>
       </Card>
-       <Button 
-          onClick={handleGoBack} 
-          variant="ghost"
-          size="sm" 
-          className="mt-6 !text-white hover:!bg-white/20 !border-white/50"
-        >
-          Back to {kidProfile.name}'s Settings
-        </Button>
-    </div>
+      
+      <Button 
+        onPress={handleGoBack} 
+        style={styles.backButton}
+        textStyle={styles.backButtonText}
+        size="sm"
+      >
+        Back to {kidProfile.name}'s Settings
+      </Button>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 16,
+    backgroundColor: '#6ee7b7', // green-300 as base for gradient
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0d9488', // teal-600
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#4b5563', // gray-600
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  selectedAvatarContainer: {
+    marginVertical: 24,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 4,
+    borderColor: '#2dd4bf', // teal-400
+  },
+  selectedAvatar: {
+    fontSize: 56,
+    textAlign: 'center',
+  },
+  avatarsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 32,
+  },
+  avatarButton: {
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 8,
+  },
+  selectedAvatarButton: {
+    backgroundColor: '#2dd4bf', // teal-400
+    borderWidth: 4,
+    borderColor: '#ccfbf1', // teal-200
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  unselectedAvatarButton: {
+    backgroundColor: '#f3f4f6', // gray-100
+  },
+  avatarText: {
+    fontSize: 32,
+  },
+  confirmButton: {
+    backgroundColor: '#0d9488', // teal-500
+  },
+  confirmButtonText: {
+    fontSize: 18,
+  },
+  backButton: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'transparent',
+  },
+  backButtonText: {
+    color: 'white',
+  },
+});
 
 export default KidAvatarSelectionScreen;

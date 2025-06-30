@@ -1,34 +1,32 @@
 import React, { useContext, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppContext } from '../../App';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { PuzzlePieceIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+// import { PuzzlePieceIcon, CheckCircleIcon } from './icons'; // You'll need to create or import these icons
 
-// Mock data for shapes
+// Shape data
 const shapes = [
-  { id: 'circle', color: 'bg-red-400', style: { width: '60px', height: '60px', borderRadius: '50%' } },
-  { id: 'square', color: 'bg-blue-400', style: { width: '60px', height: '60px' } },
-  { id: 'triangle', color: 'bg-yellow-400', style: { width: '0', height: '0', borderLeft: '30px solid transparent', borderRight: '30px solid transparent', borderBottom: '60px solid currentColor' } }, // currentColor will be tricky with Tailwind bg
+  { id: 'circle', color: '#f87171', shape: 'circle' }, // red-400
+  { id: 'square', color: '#60a5fa', shape: 'square' }, // blue-400
+  { id: 'triangle', color: '#facc15', shape: 'triangle' }, // yellow-400
 ];
 
 const targets = [
-  { id: 'circle_target', accepts: 'circle', style: { width: '70px', height: '70px', borderRadius: '50%', border: '2px dashed gray' } },
-  { id: 'square_target', accepts: 'square', style: { width: '70px', height: '70px', border: '2px dashed gray' } },
-  { id: 'triangle_target', accepts: 'triangle', style: { width: '70px', height: '60px', border: '2px dashed gray', display: 'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', color:'gray'} , label: 'Triangle' },
+  { id: 'circle_target', accepts: 'circle', label: 'Circle' },
+  { id: 'square_target', accepts: 'square', label: 'Square' },
+  { id: 'triangle_target', accepts: 'triangle', label: 'Triangle' },
 ];
 
 const ShapePuzzleScreen: React.FC = () => {
   const context = useContext(AppContext);
   const [completed, setCompleted] = useState<string[]>([]); // Store IDs of placed shapes
 
-  // This is a very simplified mock. Real drag and drop is complex.
   const handleShapeClick = (shapeId: string) => {
     if (!completed.includes(shapeId)) {
-      // In a real game, you'd check if it's placed on the correct target.
-      // For this mock, clicking a shape "completes" it if its target is available.
       const target = targets.find(t => t.accepts === shapeId);
       if (target && !completed.includes(target.accepts)) {
-          setCompleted(prev => [...prev, shapeId]);
+        setCompleted(prev => [...prev, shapeId]);
       }
     }
   };
@@ -36,58 +34,199 @@ const ShapePuzzleScreen: React.FC = () => {
   const allShapesPlaced = completed.length === shapes.length;
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-green-200 via-lime-200 to-yellow-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-md w-full text-center">
-        <PuzzlePieceIcon className="h-12 w-12 text-green-600 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-green-700 mb-1 font-display">Shape Puzzles!</h2>
-        <p className="text-gray-600 mb-6">Match the shapes to their outlines. Click a shape to place it!</p>
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        {/* <PuzzlePieceIcon style={styles.icon} /> */}
+        <Text style={styles.title}>Shape Puzzles!</Text>
+        <Text style={styles.subtitle}>Match the shapes to their outlines. Tap a shape to place it!</Text>
 
         {/* Targets Area */}
-        <div className="flex justify-around items-center bg-gray-100 p-4 rounded-lg mb-6 min-h-[100px]">
+        <View style={styles.targetsContainer}>
           {targets.map(target => (
-            <div key={target.id} style={{...target.style, borderColor: completed.includes(target.accepts) ? 'green' : 'gray' }} className={`flex items-center justify-center ${completed.includes(target.accepts) ? 'bg-green-100' : ''}`}>
-              {completed.includes(target.accepts) ? 
-                <CheckCircleIcon className="h-8 w-8 text-green-500"/> :
-                target.label || ''
-              }
-            </div>
+            <View 
+              key={target.id} 
+              style={[
+                styles.target,
+                styles[`${target.accepts}Target`],
+                completed.includes(target.accepts) && styles.completedTarget
+              ]}
+            >
+              {completed.includes(target.accepts) ? (
+                // <CheckCircleIcon style={styles.checkIcon} />
+                <Text>check circle</Text>
+              ) : (
+                <Text style={styles.targetLabel}>{target.label}</Text>
+              )}
+            </View>
           ))}
-        </div>
+        </View>
 
-        {/* Draggable Shapes Area */}
+        {/* Shapes Area */}
         {!allShapesPlaced ? (
-          <div className="flex justify-around items-center mb-6 min-h-[80px]">
+          <View style={styles.shapesContainer}>
             {shapes.filter(s => !completed.includes(s.id)).map(shape => (
-              <button 
-                key={shape.id} 
-                onClick={() => handleShapeClick(shape.id)}
-                className={`cursor-pointer transition-all hover:opacity-80 hover:scale-110 ${shape.color} ${shape.id === 'triangle' ? 'text-yellow-400' : ''}`} // Special handling for CSS triangle color
-                style={shape.style}
-                aria-label={`Place ${shape.id}`}
-              >
-                {/* For CSS triangle to pick up color if bg-* is not working directly */}
-                {shape.id === 'triangle' && <span className="opacity-0">.</span>} 
-              </button>
+              <TouchableOpacity
+                key={shape.id}
+                onPress={() => handleShapeClick(shape.id)}
+                style={[
+                  styles.shape,
+                  styles[shape.shape],
+                  { backgroundColor: shape.color }
+                ]}
+                accessibilityLabel={`Place ${shape.id}`}
+              />
             ))}
-          </div>
+          </View>
         ) : (
-            <Card className="!bg-green-100 text-green-700 p-4 my-6">
-                <CheckCircleIcon className="h-10 w-10 mx-auto mb-2"/>
-                <h3 className="text-xl font-semibold">Great Job!</h3>
-                <p>You matched all the shapes!</p>
-            </Card>
+          <Card style={styles.successCard}>
+            <CheckCircleIcon style={styles.successIcon} />
+            <Text style={styles.successTitle}>Great Job!</Text>
+            <Text style={styles.successText}>You matched all the shapes!</Text>
+          </Card>
         )}
         
         <Button 
-            onClick={() => { setCompleted([]); /* Potentially load next puzzle */ }} 
-            className="mt-4 bg-green-500 hover:bg-green-600"
-            disabled={!allShapesPlaced && completed.length > 0}
+          onPress={() => setCompleted([])}
+          style={styles.actionButton}
+          textStyle={styles.actionButtonText}
+          disabled={!allShapesPlaced && completed.length > 0}
         >
-            {allShapesPlaced ? "Play Again!" : (completed.length > 0 ? "Reset" : "Start Puzzle")}
+          {allShapesPlaced ? "Play Again!" : (completed.length > 0 ? "Reset" : "Start Puzzle")}
         </Button>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#d9f99d', // lime-200 as base for gradient
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    color: '#16a34a', // green-600
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#166534', // green-700
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4b5563', // gray-600
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  targetsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f3f4f6', // gray-100
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    minHeight: 100,
+  },
+  target: {
+    width: 70,
+    height: 70,
+    borderWidth: 2,
+    borderColor: '#9ca3af', // gray-400
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circleTarget: {
+    borderRadius: 35,
+  },
+  squareTarget: {
+    borderRadius: 4,
+  },
+  triangleTarget: {
+    backgroundColor: 'transparent',
+    width: 70,
+    height: 60,
+  },
+  completedTarget: {
+    backgroundColor: '#dcfce7', // green-100
+    borderColor: '#16a34a', // green-600
+  },
+  targetLabel: {
+    color: '#6b7280', // gray-500
+    fontSize: 12,
+  },
+  checkIcon: {
+    width: 32,
+    height: 32,
+    color: '#16a34a', // green-600
+  },
+  shapesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 24,
+    minHeight: 80,
+  },
+  shape: {
+    width: 60,
+    height: 60,
+  },
+  circle: {
+    borderRadius: 30,
+  },
+  square: {
+    borderRadius: 4,
+  },
+  triangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 30,
+    borderRightWidth: 30,
+    borderBottomWidth: 60,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#facc15', // yellow-400
+  },
+  successCard: {
+    backgroundColor: '#dcfce7', // green-100
+    padding: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  successIcon: {
+    width: 40,
+    height: 40,
+    color: '#16a34a', // green-600
+    marginBottom: 8,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#166534', // green-700
+    marginBottom: 4,
+  },
+  successText: {
+    color: '#166534', // green-700
+  },
+  actionButton: {
+    backgroundColor: '#16a34a', // green-600
+    marginTop: 16,
+  },
+  actionButtonText: {
+    color: 'white',
+  },
+});
 
 export default ShapePuzzleScreen;

@@ -1,7 +1,7 @@
 
 import React, { useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient'; // For gradient background
+import { LinearGradient } from 'react-native-linear-gradient'; // For gradient background
 import { AppContext } from '../../App'; // Assuming App.tsx is root
 import { AppViewEnum, UserRole, KidProfile } from '../types'; // Renamed View to AppViewEnum, Imported KidProfile
 import { APP_NAME } from '../constants';

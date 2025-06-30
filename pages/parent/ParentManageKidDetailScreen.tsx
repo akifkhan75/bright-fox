@@ -1,24 +1,24 @@
-
 import React, { useState, useContext, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { View as RNView, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../../App';
 import { View, KidProfile, ParentalControls, LearningLevel, AgeGroup } from '../../types';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import { LEARNING_LEVELS, SUBJECTS_LIST, DEFAULT_PARENTAL_CONTROLS, AGE_GROUPS_V3 } from '../../constants';
-import { PencilIcon, ClockIcon, BookOpenIcon, ArrowPathIcon, ChartBarIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, ClockIcon, BookOpenIcon, ArrowPathIcon, ChartBarIcon, UserCircleIcon } from 'react-native-heroicons/solid';
+import Slider from '@react-native-community/slider';
+import RNPickerSelect from 'react-native-picker-select';
 
 const ParentManageKidDetailScreen: React.FC = () => {
   const context = useContext(AppContext);
-  const { kidId } = useParams<{ kidId: string }>();
-  const navigate = useNavigate();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { kidId } = route.params;
 
   const [managedKid, setManagedKid] = useState<KidProfile | null>(null);
   const [kidControls, setKidControls] = useState<ParentalControls | null>(null);
-
-  // Local form state
   const [localName, setLocalName] = useState('');
-  // Avatar is managed via KidAvatarSelectionScreen
   const [localScreenTime, setLocalScreenTime] = useState(0);
   const [localLearningPath, setLocalLearningPath] = useState<string[]>([]);
   const [localLearningLevel, setLocalLearningLevel] = useState<LearningLevel>('Basic');
@@ -27,29 +27,35 @@ const ParentManageKidDetailScreen: React.FC = () => {
 
   useEffect(() => {
     if (context && kidId) {
-      const foundKid = context.appState.kidProfiles.find(kp => kp.id === kidId && kp.parentId === context.appState.currentParentProfileId);
+      const foundKid = context.appState.kidProfiles.find(kp => 
+        kp.id === kidId && kp.parentId === context.appState.currentParentProfileId
+      );
       if (foundKid) {
         setManagedKid(foundKid);
         setLocalName(foundKid.name);
-        // Avatar is displayed from foundKid.avatar, but selection is separate
         setLocalLearningPath(foundKid.learningPathFocus || []);
         setLocalLearningLevel(foundKid.currentLearningLevel || 'Basic');
         setLocalAgeGroup(foundKid.ageGroup);
 
-        const controls = context.appState.parentalControlsMap[kidId] || {...DEFAULT_PARENTAL_CONTROLS, kidId: kidId};
+        const controls = context.appState.parentalControlsMap[kidId] || 
+          {...DEFAULT_PARENTAL_CONTROLS, kidId: kidId};
         setKidControls(controls);
         setLocalScreenTime(controls.screenTimeLimit);
-
       } else {
         alert("Kid profile not found or access denied.");
-        navigate('/parentdashboard');
+        navigation.goBack();
       }
     }
-  }, [context, kidId, navigate]);
+  }, [context, kidId, navigation]);
 
   if (!context || !managedKid || !kidControls) {
-    return <div className="p-4 text-center">Loading kid details...</div>;
+    return (
+      <RNView style={styles.loadingContainer}>
+        <Text>Loading kid details...</Text>
+      </RNView>
+    );
   }
+
   const { updateKidProfileAndControls, setViewWithPath, setAppState } = context;
 
   const toggleLearningPath = (path: string) => {
@@ -61,14 +67,13 @@ const ParentManageKidDetailScreen: React.FC = () => {
   const handleSaveChanges = () => {
     setError('');
     if (!localName.trim()) {
-        setError("Kid's name cannot be empty.");
-        return;
+      setError("Kid's name cannot be empty.");
+      return;
     }
 
     const updatedKidProfile: KidProfile = {
       ...managedKid,
       name: localName,
-      // Avatar is not changed here, but taken from managedKid (which is updated by KidAvatarSelectionScreen)
       learningPathFocus: localLearningPath,
       currentLearningLevel: localLearningLevel,
       ageGroup: localAgeGroup,
@@ -83,91 +88,351 @@ const ParentManageKidDetailScreen: React.FC = () => {
   };
 
   const handleChangeAvatar = () => {
-    // Set this kid as active and navigate to avatar selection. Parent role maintained in AppState.
     setAppState(prev => ({...prev, currentKidProfileId: managedKid.id}));
     setViewWithPath(View.KidAvatarSelection, `/kidavatarselection`);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-6 pt-20"> {/* pt-20 for header */}
-      <Card className="max-w-lg mx-auto">
-        <div className="flex items-center space-x-4 mb-6">
-            <span className="text-6xl p-2 bg-sky-100 rounded-full">{managedKid.avatar}</span>
-            <div>
-                 <h2 className="text-2xl font-bold text-sky-700 font-display">{localName}'s Settings</h2>
-                 <p className="text-sm text-gray-500">Manage learning experience and controls.</p>
-            </div>
-        </div>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Card style={styles.mainCard}>
+        <RNView style={styles.headerContainer}>
+          <RNView style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{managedKid.avatar}</Text>
+          </RNView>
+          <RNView>
+            <Text style={styles.title}>{localName}'s Settings</Text>
+            <Text style={styles.subtitle}>Manage learning experience and controls.</Text>
+          </RNView>
+        </RNView>
 
-        <form className="space-y-6">
-          <div>
-            <label htmlFor="kidName" className="block text-sm font-medium text-gray-700">Child's Name</label>
-            <input type="text" id="kidName" value={localName} onChange={(e) => setLocalName(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
-          </div>
+        <RNView style={styles.formContainer}>
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Child's Name</Text>
+            <TextInput
+              style={styles.textInput}
+              value={localName}
+              onChangeText={setLocalName}
+              placeholder="Enter child's name"
+            />
+          </RNView>
           
-          <div>
-            <label htmlFor="ageGroup" className="block text-sm font-medium text-gray-700">Age Group</label>
-            <select id="ageGroup" value={localAgeGroup || ''} onChange={e => setLocalAgeGroup(e.target.value as AgeGroup)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md shadow-sm">
-                {AGE_GROUPS_V3.map(ag => <option key={ag} value={ag}>{ag} years</option>)}
-            </select>
-          </div>
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Age Group</Text>
+            <RNView style={styles.pickerContainer}>
+              <RNPickerSelect
+                onValueChange={(value) => setLocalAgeGroup(value)}
+                items={AGE_GROUPS_V3.map(ag => ({
+                  label: `${ag} years`,
+                  value: ag,
+                }))}
+                value={localAgeGroup}
+                style={pickerSelectStyles}
+              />
+            </RNView>
+          </RNView>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Avatar</label>
-            <div className="mt-1 flex items-center">
-                <span className="text-4xl p-1 bg-gray-100 rounded-lg mr-3">{managedKid.avatar}</span>
-                <Button type="button" onClick={handleChangeAvatar} variant="ghost">
-                    <UserCircleIcon className="h-5 w-5 mr-1 inline"/> Change Avatar
-                </Button>
-            </div>
-          </div>
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Avatar</Text>
+            <RNView style={styles.avatarChangeContainer}>
+              <RNView style={styles.currentAvatarContainer}>
+                <Text style={styles.currentAvatarText}>{managedKid.avatar}</Text>
+              </RNView>
+              <Button 
+                onPress={handleChangeAvatar}
+                style={styles.changeAvatarButton}
+                textStyle={styles.changeAvatarButtonText}
+              >
+                <UserCircleIcon size={20} color="#3b82f6" style={styles.buttonIcon}/>
+                Change Avatar
+              </Button>
+            </RNView>
+          </RNView>
 
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Daily Screen Time Limit</Text>
+            <RNView style={styles.sliderContainer}>
+              <Slider
+                style={styles.slider}
+                minimumValue={10}
+                maximumValue={180}
+                step={5}
+                value={localScreenTime}
+                onValueChange={setLocalScreenTime}
+                minimumTrackTintColor="#0ea5e9"
+                maximumTrackTintColor="#e5e7eb"
+                thumbTintColor="#0ea5e9"
+              />
+              <Text style={styles.sliderValue}>{localScreenTime} min</Text>
+            </RNView>
+          </RNView>
 
-          <div>
-            <label htmlFor="screenTime" className="block text-sm font-medium text-gray-700">Daily Screen Time Limit</label>
-            <div className="flex items-center gap-2 mt-1">
-                <input type="range" id="screenTime" min="10" max="180" step="5" value={localScreenTime} 
-                       onChange={(e) => setLocalScreenTime(parseInt(e.target.value))}
-                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-skyBlue"/>
-                <span className="text-sm font-semibold text-skyBlue w-16 text-right">{localScreenTime} min</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Learning Path Focus</label>
-            <div className="mt-1 flex flex-wrap gap-2">
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Learning Path Focus</Text>
+            <RNView style={styles.learningPathContainer}>
               {SUBJECTS_LIST.slice(0, 8).map(path => (
-                <button type="button" key={path} onClick={() => toggleLearningPath(path)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border ${localLearningPath.includes(path) ? 'bg-skyBlue text-white border-skyBlue' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}>
-                  {path}
-                </button>
+                <TouchableOpacity
+                  key={path}
+                  onPress={() => toggleLearningPath(path)}
+                  style={[
+                    styles.learningPathButton,
+                    localLearningPath.includes(path) && styles.learningPathButtonSelected
+                  ]}
+                >
+                  <Text style={[
+                    styles.learningPathButtonText,
+                    localLearningPath.includes(path) && styles.learningPathButtonTextSelected
+                  ]}>
+                    {path}
+                  </Text>
+                </TouchableOpacity>
               ))}
-            </div>
-          </div>
+            </RNView>
+          </RNView>
 
-          <div>
-            <label htmlFor="learningLevel" className="block text-sm font-medium text-gray-700">Current Learning Level</label>
-            <select id="learningLevel" value={localLearningLevel} onChange={e => setLocalLearningLevel(e.target.value as LearningLevel)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md shadow-sm">
-              {LEARNING_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}
-            </select>
-          </div>
+          <RNView style={styles.inputGroup}>
+            <Text style={styles.label}>Current Learning Level</Text>
+            <RNView style={styles.pickerContainer}>
+              <RNPickerSelect
+                onValueChange={(value) => setLocalLearningLevel(value)}
+                items={LEARNING_LEVELS.map(level => ({
+                  label: level,
+                  value: level,
+                }))}
+                value={localLearningLevel}
+                style={pickerSelectStyles}
+              />
+            </RNView>
+          </RNView>
           
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <Button type="button" onClick={handleSaveChanges} fullWidth size="lg" className="!bg-green-500 hover:!bg-green-600">
-            <PencilIcon className="h-5 w-5 mr-2 inline"/> Save Changes
+          <Button 
+            onPress={handleSaveChanges}
+            style={styles.saveButton}
+            textStyle={styles.saveButtonText}
+          >
+            <PencilIcon size={20} color="white" style={styles.buttonIcon}/>
+            Save Changes
           </Button>
           
-          {/* PIN Reset Button Removed for V5 */}
-          
-          <Button type="button" onClick={() => alert("Mock performance data coming soon!")} fullWidth variant="ghost">
-             <ChartBarIcon className="h-5 w-5 mr-2 inline"/> View Performance Report (Mock)
+          <Button 
+            onPress={() => alert("Mock performance data coming soon!")}
+            style={styles.performanceButton}
+            textStyle={styles.performanceButtonText}
+          >
+            <ChartBarIcon size={20} color="#3b82f6" style={styles.buttonIcon}/>
+            View Performance Report (Mock)
           </Button>
-
-        </form>
+        </RNView>
       </Card>
-    </div>
+    </ScrollView>
   );
 };
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    color: '#1f2937',
+    paddingRight: 30,
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    color: '#1f2937',
+    paddingRight: 30,
+  },
+});
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+  },
+  contentContainer: {
+    padding: 16,
+    paddingTop: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  mainCard: {
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    backgroundColor: '#e0f2fe',
+    borderRadius: 40,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  avatarText: {
+    fontSize: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  formContainer: {
+    marginTop: 8,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    backgroundColor: 'white',
+  },
+  avatarChangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currentAvatarContainer: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  currentAvatarText: {
+    fontSize: 24,
+  },
+  changeAvatarButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  changeAvatarButtonText: {
+    color: '#3b82f6',
+    fontSize: 14,
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  slider: {
+    flex: 1,
+    height: 40,
+    marginRight: 12,
+  },
+  sliderValue: {
+    width: 60,
+    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0ea5e9',
+  },
+  learningPathContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  learningPathButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#f3f4f6',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  learningPathButtonSelected: {
+    backgroundColor: '#0ea5e9',
+    borderColor: '#0ea5e9',
+  },
+  learningPathButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  learningPathButtonTextSelected: {
+    color: 'white',
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  saveButton: {
+    backgroundColor: '#10b981',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  performanceButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    padding: 16,
+    borderRadius: 8,
+  },
+  performanceButtonText: {
+    color: '#3b82f6',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+});
 
 export default ParentManageKidDetailScreen;

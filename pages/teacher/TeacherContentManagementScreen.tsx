@@ -1,149 +1,362 @@
-
 import React, { useContext, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { AppContext } from '../../App';
-import { View, UserRole, Activity, ActivityStatus, Course, LessonContentType } from '../../types';
+import { View as ViewType, UserRole, Activity, ActivityStatus, Course } from '../../types';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { PencilIcon, TrashIcon, PlusCircleIcon, BookOpenIcon, PuzzlePieceIcon } from '@heroicons/react/24/outline'; // AcademicCapIcon for courses
+// import PencilIcon from '../../assets/icons/PencilIcon';
+// import TrashIcon from '../../assets/icons/TrashIcon';
+// import PlusCircleIcon from '../../assets/icons/PlusCircleIcon';
+// import BookOpenIcon from '../../assets/icons/BookOpenIcon';
+import { useNavigation } from '@react-navigation/native';
 
 const TeacherContentManagementScreen: React.FC = () => {
   const context = useContext(AppContext);
+  const navigation = useNavigation();
 
   if (!context || !context.teacherProfile || context.appState.currentUserRole !== UserRole.Teacher) {
-    return <div className="p-4 text-center">Access Denied.</div>;
+    return (
+      <View style={styles.deniedContainer}>
+        <Text>Access Denied.</Text>
+      </View>
+    );
   }
-  const { teacherProfile, allActivities, allCourses, setViewWithPath } = context;
+
+  const { teacherProfile, allActivities, allCourses } = context;
 
   const teacherCreatedCourses = useMemo(() => {
     return allCourses.filter(course => course.teacherId === teacherProfile.id)
                      .sort((a,b) => (a.title > b.title ? 1 : -1));
   }, [allCourses, teacherProfile.id]);
 
-  const teacherCreatedActivities = useMemo(() => { // Short activities
+  const teacherCreatedActivities = useMemo(() => {
     return allActivities.filter(act => act.creatorId === teacherProfile.id && act.creatorType === 'Teacher')
                         .sort((a,b) => (a.name > b.name ? 1 : -1));
   }, [allActivities, teacherProfile.id]);
 
-
   const getStatusColor = (status?: ActivityStatus) => {
     switch (status) {
-      case ActivityStatus.Approved: case ActivityStatus.Active: return 'text-green-600 bg-green-100';
-      case ActivityStatus.Pending: return 'text-yellow-600 bg-yellow-100';
-      case ActivityStatus.Rejected: return 'text-red-600 bg-red-100';
-      case ActivityStatus.Draft: return 'text-gray-600 bg-gray-100';
-      case ActivityStatus.Completed: return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case ActivityStatus.Approved: 
+      case ActivityStatus.Active: 
+        return { text: '#059669', bg: '#d1fae5' };
+      case ActivityStatus.Pending: 
+        return { text: '#d97706', bg: '#fef3c7' };
+      case ActivityStatus.Rejected: 
+        return { text: '#dc2626', bg: '#fee2e2' };
+      case ActivityStatus.Draft: 
+        return { text: '#4b5563', bg: '#f3f4f6' };
+      case ActivityStatus.Completed: 
+        return { text: '#2563eb', bg: '#dbeafe' };
+      default: 
+        return { text: '#4b5563', bg: '#f3f4f6' };
     }
   };
   
   const handleEditContent = (contentId: string, isCourse: boolean) => {
-    // Navigate to builder, ActivityBuilderScreen handles both via courseId param
-    setViewWithPath(View.ActivityBuilder, `/activitybuilder/${contentId}`);
+    navigation.navigate('ActivityBuilder', { contentId });
   };
 
   const handleDeleteContent = (contentId: string, isCourse: boolean) => {
-    if(window.confirm(`Are you sure you want to delete this ${isCourse ? 'course' : 'activity'}? This action cannot be undone.`)) {
-        alert(`${isCourse ? 'Course' : 'Activity'} ${contentId} would be deleted. (API call needed)`);
-        // Example: context.deleteContent(contentId, isCourse);
-    }
+    Alert.alert(
+      'Confirm Deletion',
+      `Are you sure you want to delete this ${isCourse ? 'course' : 'activity'}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(`${isCourse ? 'Course' : 'Activity'} ${contentId} would be deleted. (API call needed)`);
+            // Example: context.deleteContent(contentId, isCourse);
+          }
+        }
+      ]
+    );
   };
 
+  const navigateToCreate = () => {
+    navigation.navigate('ActivityBuilder');
+  };
 
   return (
-    <div className="p-4 md:p-6 bg-slate-100 min-h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-cyan-700 font-display">My Created Content</h2>
-        <Button onClick={() => setViewWithPath(View.ActivityBuilder, '/activitybuilder')} className="bg-cyan-600 hover:bg-cyan-700">
-          <PlusCircleIcon className="h-5 w-5 mr-2 inline"/> Create New
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Created Content</Text>
+        <Button onPress={navigateToCreate} style={styles.createButton}>
+          {/* <PlusCircleIcon width={20} height={20} fill="#ffffff" /> */}
+          <Text style={styles.createButtonText}>Create New</Text>
         </Button>
-      </div>
+      </View>
 
       {teacherCreatedCourses.length === 0 && teacherCreatedActivities.length === 0 ? (
-        <Card className="text-center py-8">
-          <BookOpenIcon className="h-16 w-16 text-gray-300 mx-auto mb-4"/>
-          <p className="text-gray-600 font-semibold mb-2">You haven't created any courses or activities yet.</p>
-          <Button onClick={() => setViewWithPath(View.ActivityBuilder, '/activitybuilder')}>
+        <Card style={styles.emptyCard}>
+          {/* <BookOpenIcon width={64} height={64} fill="#d1d5db" /> */}
+          <Text style={styles.emptyText}>You haven't created any courses or activities yet.</Text>
+          <Button onPress={navigateToCreate} style={styles.emptyButton}>
             Start Creating!
           </Button>
         </Card>
       ) : (
         <>
           {teacherCreatedCourses.length > 0 && (
-            <section className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-700 mb-3">My Courses</h3>
-              <div className="space-y-4">
-                {teacherCreatedCourses.map(course => (
-                  <Card key={course.id} className="!p-0 overflow-hidden shadow-md">
-                    <div className="p-4">
-                      <div className="flex justify-between items-start">
-                          <div>
-                              <h4 className="text-lg font-semibold text-gray-800">{course.title}</h4>
-                              <p className="text-sm text-gray-500">Subject: {course.subject} | Duration: {course.durationWeeks} weeks</p>
-                              <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block mt-1 ${getStatusColor(course.status)}`}>
-                                  Status: {course.status || 'Unknown'}
-                              </p>
-                              {(course.priceOneTime || course.priceMonthly) && <span className="ml-2 text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Premium</span>}
-                          </div>
-                          <div className="flex space-x-2 flex-shrink-0">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditContent(course.id, true)} className="!p-1.5 sm:!p-2 text-blue-600 hover:!bg-blue-50">
-                                  <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5"/>
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteContent(course.id, true)} className="!p-1.5 sm:!p-2 text-red-600 hover:!bg-red-50">
-                                  <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5"/>
-                              </Button>
-                          </div>
-                      </div>
-                       <p className="text-xs text-gray-400 mt-2">Target Ages: {course.ageGroups.join(', ')}</p>
-                       <p className="text-sm text-gray-600 mt-1 truncate">{course.description}</p>
-                    </div>
-                    {course.status === ActivityStatus.Rejected && ( /* Example for rejected content */
-                      <div className="bg-red-50 p-3 border-t border-red-200">
-                          <p className="text-xs text-red-700"><strong>Rejection Reason (Mock):</strong> Course description needs more detail on learning outcomes.</p>
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </section>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>My Courses</Text>
+              <View style={styles.contentList}>
+                {teacherCreatedCourses.map(course => {
+                  const statusColor = getStatusColor(course.status);
+                  return (
+                    <Card key={course.id} style={styles.contentCard}>
+                      <View style={styles.contentHeader}>
+                        <View style={styles.contentInfo}>
+                          <Text style={styles.contentName}>{course.title}</Text>
+                          <Text style={styles.contentMeta}>Subject: {course.subject} | Duration: {course.durationWeeks} weeks</Text>
+                          <View style={[styles.statusBadge, { backgroundColor: statusColor.bg }]}>
+                            <Text style={[styles.statusText, { color: statusColor.text }]}>Status: {course.status || 'Unknown'}</Text>
+                          </View>
+                          {(course.priceOneTime || course.priceMonthly) && (
+                            <View style={styles.premiumBadge}>
+                              <Text style={styles.premiumText}>Premium</Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.actionButtons}>
+                          <Button 
+                            onPress={() => handleEditContent(course.id, true)} 
+                            style={styles.editButton}
+                          >
+                            {/* <PencilIcon width={20} height={20} fill="#2563eb" /> */}
+                          </Button>
+                          <Button 
+                            onPress={() => handleDeleteContent(course.id, true)} 
+                            style={styles.deleteButton}
+                          >
+                            {/* <TrashIcon width={20} height={20} fill="#dc2626" /> */}
+                          </Button>
+                        </View>
+                      </View>
+                      <Text style={styles.ageGroups}>Target Ages: {course.ageGroups.join(', ')}</Text>
+                      <Text style={styles.description} numberOfLines={1}>{course.description}</Text>
+                      {course.status === ActivityStatus.Rejected && (
+                        <View style={styles.rejectionNote}>
+                          <Text style={styles.rejectionText}>
+                            <Text style={styles.rejectionLabel}>Rejection Reason (Mock):</Text> Course description needs more detail on learning outcomes.
+                          </Text>
+                        </View>
+                      )}
+                    </Card>
+                  );
+                })}
+              </View>
+            </View>
           )}
 
           {teacherCreatedActivities.length > 0 && (
-            <section>
-              <h3 className="text-xl font-semibold text-gray-700 mb-3">My Short Activities</h3>
-              <div className="space-y-4">
-                {teacherCreatedActivities.map(activity => (
-                  <Card key={activity.id} className="!p-0 overflow-hidden shadow-md">
-                    <div className="p-4">
-                      <div className="flex justify-between items-start">
-                          <div>
-                              <h4 className="text-lg font-semibold text-gray-800">{activity.name}</h4>
-                              <p className="text-sm text-gray-500">Type: {activity.contentType.replace(/([A-Z])/g, ' $1').trim()} | Difficulty: {activity.difficulty}</p>
-                              <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block mt-1 ${getStatusColor(activity.status)}`}>
-                                  Status: {activity.status || 'Unknown'}
-                              </p>
-                              {activity.isPremium && <span className="ml-2 text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Premium</span>}
-                          </div>
-                          <div className="flex space-x-2 flex-shrink-0">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditContent(activity.id, false)} className="!p-1.5 sm:!p-2 text-blue-600 hover:!bg-blue-50">
-                                  <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5"/>
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteContent(activity.id, false)} className="!p-1.5 sm:!p-2 text-red-600 hover:!bg-red-50">
-                                  <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5"/>
-                              </Button>
-                          </div>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">Target Ages: {activity.ageGroups.join(', ')}</p>
-                      {activity.activityContent?.description && <p className="text-sm text-gray-600 mt-1 truncate">{activity.activityContent.description}</p>}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </section>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>My Short Activities</Text>
+              <View style={styles.contentList}>
+                {teacherCreatedActivities.map(activity => {
+                  const statusColor = getStatusColor(activity.status);
+                  const contentType = activity.contentType.replace(/([A-Z])/g, ' $1').trim();
+                  return (
+                    <Card key={activity.id} style={styles.contentCard}>
+                      <View style={styles.contentHeader}>
+                        <View style={styles.contentInfo}>
+                          <Text style={styles.contentName}>{activity.name}</Text>
+                          <Text style={styles.contentMeta}>Type: {contentType} | Difficulty: {activity.difficulty}</Text>
+                          <View style={[styles.statusBadge, { backgroundColor: statusColor.bg }]}>
+                            <Text style={[styles.statusText, { color: statusColor.text }]}>Status: {activity.status || 'Unknown'}</Text>
+                          </View>
+                          {activity.isPremium && (
+                            <View style={styles.premiumBadge}>
+                              <Text style={styles.premiumText}>Premium</Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.actionButtons}>
+                          <Button 
+                            onPress={() => handleEditContent(activity.id, false)} 
+                            style={styles.editButton}
+                          >
+                            pencil
+                            {/* <PencilIcon width={20} height={20} fill="#2563eb" /> */}
+                          </Button>
+                          <Button 
+                            onPress={() => handleDeleteContent(activity.id, false)} 
+                            style={styles.deleteButton}
+                          >
+                            trash
+                            {/* <TrashIcon width={20} height={20} fill="#dc2626" /> */}
+                          </Button>
+                        </View>
+                      </View>
+                      <Text style={styles.ageGroups}>Target Ages: {activity.ageGroups.join(', ')}</Text>
+                      {activity.activityContent?.description && (
+                        <Text style={styles.description} numberOfLines={1}>
+                          {activity.activityContent.description}
+                        </Text>
+                      )}
+                    </Card>
+                  );
+                })}
+              </View>
+            </View>
           )}
         </>
       )}
-    </div>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  deniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#155e75',
+  },
+  createButton: {
+    backgroundColor: '#0891b2',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  createButtonText: {
+    color: '#ffffff',
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#4b5563',
+    fontWeight: '500',
+    marginVertical: 16,
+    textAlign: 'center',
+  },
+  emptyButton: {
+    marginTop: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  contentList: {
+    gap: 16,
+  },
+  contentCard: {
+    padding: 0,
+    overflow: 'hidden',
+    elevation: 2,
+  },
+  contentHeader: {
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  contentInfo: {
+    flex: 1,
+  },
+  contentName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  contentMeta: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  premiumBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ede9fe',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  premiumText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7c3aed',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    backgroundColor: 'transparent',
+    padding: 8,
+  },
+  deleteButton: {
+    backgroundColor: 'transparent',
+    padding: 8,
+  },
+  ageGroups: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  description: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  rejectionNote: {
+    backgroundColor: '#fee2e2',
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#fecaca',
+  },
+  rejectionText: {
+    fontSize: 12,
+    color: '#991b1b',
+  },
+  rejectionLabel: {
+    fontWeight: '600',
+  },
+});
 
 export default TeacherContentManagementScreen;

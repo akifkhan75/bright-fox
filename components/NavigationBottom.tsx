@@ -1,29 +1,33 @@
-
 import React, { useContext } from 'react';
-import { HomeIcon, Squares2X2Icon, InformationCircleIcon, UserCircleIcon, Cog6ToothIcon, AcademicCapIcon, CurrencyDollarIcon, DocumentTextIcon, StarIcon, LightBulbIcon, PaintBrushIcon, MagnifyingGlassIcon, BookOpenIcon, ShieldCheckIcon, ChatBubbleLeftRightIcon, UserGroupIcon, ScaleIcon, EyeIcon } from '@heroicons/react/24/solid';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+// import { MaterialCommunityIcons, MaterialIcons, FontAwesome, Ionicons, Feather } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AppContext } from '../App';
-import { View, UserRole } from '../types';
+import { View as ViewType, UserRole } from '../types';
 
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
-  onClick: () => void;
-  className?: string;
+  onPress: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick, className }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onPress }) => {
   return (
-    <button
-      onClick={onClick}
-      className={`relative flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-lg transition-all duration-150 w-1/4 transform active:scale-90 ${className} ${
-        isActive ? 'text-sky-500 scale-105' : 'text-gray-500 hover:text-sky-600' 
-      }`}
-      aria-label={label}
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.navItem}
+      activeOpacity={0.7}
+      accessibilityLabel={label}
     >
-      <div className={`w-5 h-5 sm:w-6 sm:h-6 mb-0.5 ${isActive ? 'text-sky-500' : 'text-gray-400'}`}>{icon}</div>
-      <span className={`text-[9px] sm:text-[10px] font-medium ${isActive ? 'text-sky-500' : 'text-gray-500'}`}>{label}</span>
-    </button>
+      <View style={[styles.iconContainer, isActive && styles.activeIcon]}>
+        {React.cloneElement(icon, {
+          size: 22,
+          color: isActive ? '#0ea5e9' : '#9ca3af',
+        })}
+      </View>
+      <Text style={[styles.label, isActive && styles.activeLabel]}>{label}</Text>
+    </TouchableOpacity>
   );
 };
 
@@ -33,64 +37,109 @@ const NavigationBottom: React.FC = () => {
 
   const { appState, currentView, setViewWithPath } = context;
 
-  let navItems: Array<{ id: View; icon: React.ReactNode; label: string; }> = [];
-
+  let navItems: Array<{ id: ViewType; icon: React.ReactElement; label: string }> = [];
 
   if (appState.currentUserRole === UserRole.Kid) {
     navItems = [
-      { id: View.KidHome, icon: <HomeIcon />, label: 'Home' },
-      { id: View.KidAchievements, icon: <StarIcon />, label: 'Awards' },
-      { id: View.KidLearningPathView, icon: <BookOpenIcon />, label: 'Courses' }, 
-      { id: View.AppInfo, icon: <InformationCircleIcon />, label: 'Info' }, 
+      { id: ViewType.KidHome, icon: <MaterialCommunityIcons name="home" />, label: 'Home' },
+      { id: ViewType.KidAchievements, icon: <MaterialCommunityIcons name="star" />, label: 'Awards' },
+      { id: ViewType.KidLearningPathView, icon: <MaterialCommunityIcons name="book-open" />, label: 'Courses' },
+      { id: ViewType.AppInfo, icon: <MaterialCommunityIcons name="information" />, label: 'Info' },
     ];
   } else if (appState.currentUserRole === UserRole.Parent) {
     navItems = [
-      { id: View.ParentDashboard, icon: <UserCircleIcon />, label: 'Dashboard' },
-      { id: View.ParentCourseDiscoveryView, icon: <MagnifyingGlassIcon />, label: 'Discover' }, 
-      { id: View.ParentDashboard, icon: <UserGroupIcon />, label: 'Manage Kids' }, 
-      { id: View.ChatListScreen, icon: <ChatBubbleLeftRightIcon />, label: 'Chats' },
+      { id: ViewType.ParentDashboard, icon: <MaterialCommunityIcons name="account" />, label: 'Dashboard' },
+      { id: ViewType.ParentCourseDiscoveryView, icon: <MaterialCommunityIcons name="magnify" />, label: 'Discover' },
+      { id: ViewType.ParentDashboard, icon: <MaterialCommunityIcons name="account-group" />, label: 'Manage Kids' },
+      { id: ViewType.ChatListScreen, icon: <MaterialCommunityIcons name="message-text" />, label: 'Chats' },
     ];
   } else if (appState.currentUserRole === UserRole.Teacher) {
     navItems = [
-      { id: View.TeacherDashboard, icon: <AcademicCapIcon />, label: 'Dashboard' },
-      { id: View.TeacherContentManagement, icon: <DocumentTextIcon />, label: 'Content' },
-      { id: View.ChatListScreen, icon: <ChatBubbleLeftRightIcon />, label: 'Chats' },
-      { id: View.TeacherEarnings, icon: <CurrencyDollarIcon />, label: 'Earnings' },
+      { id: ViewType.TeacherDashboard, icon: <MaterialCommunityIcons name="school" />, label: 'Dashboard' },
+      { id: ViewType.TeacherContentManagement, icon: <MaterialCommunityIcons name="file-document" />, label: 'Content' },
+      { id: ViewType.ChatListScreen, icon: <MaterialCommunityIcons name="message-text" />, label: 'Chats' },
+      { id: ViewType.TeacherEarnings, icon: <MaterialCommunityIcons name="currency-usd" />, label: 'Earnings' },
     ];
   } else if (appState.currentUserRole === UserRole.Admin) {
     navItems = [
-      { id: View.AdminDashboard, icon: <HomeIcon />, label: 'Dashboard' },
-      { id: View.AdminTeacherVerificationApproval, icon: <ShieldCheckIcon />, label: 'Verify' },
-      { id: View.AdminContentModeration, icon: <EyeIcon />, label: 'Moderate' },
-      { id: View.AdminUserManagement, icon: <UserGroupIcon />, label: 'Users' },
+      { id: ViewType.AdminDashboard, icon: <MaterialCommunityIcons name="home" />, label: 'Dashboard' },
+      { id: ViewType.AdminTeacherVerificationApproval, icon: <MaterialCommunityIcons name="shield-check" />, label: 'Verify' },
+      { id: ViewType.AdminContentModeration, icon: <MaterialCommunityIcons name="eye" />, label: 'Moderate' },
+      { id: ViewType.AdminUserManagement, icon: <MaterialCommunityIcons name="account-group" />, label: 'Users' },
     ];
   }
 
   if (navItems.length === 0) return null;
 
-  const handleNavClick = (viewId: View, itemLabel: string) => {
-    let path = `/${(View[viewId] as string).toLowerCase()}`;
+  const handleNavClick = (viewId: ViewType, itemLabel: string) => {
+    let path = `/${ViewType[viewId].toLowerCase()}`;
     
-    if (itemLabel === 'Manage Kids' && viewId === View.ParentDashboard && appState.currentUserRole === UserRole.Parent) {
-        setViewWithPath(View.ParentDashboard, path); 
-        return;
+    if (itemLabel === 'Manage Kids' && viewId === ViewType.ParentDashboard && appState.currentUserRole === UserRole.Parent) {
+      setViewWithPath(ViewType.ParentDashboard, path); 
+      return;
     }
     setViewWithPath(viewId, path);
-  }
+  };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around items-center bg-white/95 backdrop-blur-md shadow-top h-14 sm:h-16 border-t border-gray-200 max-w-[420px] mx-auto rounded-t-lg sm:rounded-t-xl">
+    <View style={styles.container}>
       {navItems.map((item) => (
         <NavItem
-          key={item.id + item.label} 
+          key={`${item.id}-${item.label}`}
           icon={item.icon}
           label={item.label}
-          isActive={currentView === item.id || (item.label === 'Manage Kids' && currentView === View.ParentDashboard)}
-          onClick={() => handleNavClick(item.id, item.label)}
+          isActive={currentView === item.id || (item.label === 'Manage Kids' && currentView === ViewType.ParentDashboard)}
+          onPress={() => handleNavClick(item.id, item.label)}
         />
       ))}
-    </nav>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    height: 60,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingHorizontal: 10,
+    maxWidth: 420,
+    alignSelf: 'center',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  iconContainer: {
+    marginBottom: 4,
+  },
+  activeIcon: {
+    // Additional active icon styles if needed
+  },
+  label: {
+    fontSize: 10,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  activeLabel: {
+    color: '#0ea5e9',
+  },
+});
 
 export default NavigationBottom;

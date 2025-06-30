@@ -1,22 +1,47 @@
-
 import React from 'react';
+import { TouchableOpacity, StyleSheet, ViewStyle, AccessibilityProps } from 'react-native';
 
-interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface IconButtonProps extends AccessibilityProps {
   icon: React.ReactNode;
-  className?: string;
-  ariaLabel: string;
+  style?: ViewStyle;
+  onPress?: () => void;
+  disabled?: boolean;
+  accessibilityLabel: string; // React Native uses accessibilityLabel instead of aria-label
 }
 
-const IconButton: React.FC<IconButtonProps> = ({ icon, className = '', ariaLabel, ...props }) => {
+const IconButton: React.FC<IconButtonProps> = ({ 
+  icon, 
+  style, 
+  accessibilityLabel, 
+  disabled = false,
+  onPress,
+  ...props 
+}) => {
   return (
-    <button
-      aria-label={ariaLabel}
-      className={`p-2 rounded-full hover:bg-gray-200 active:bg-gray-300 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500 ${className}`}
+    <TouchableOpacity
+      accessibilityLabel={accessibilityLabel}
+      style={[styles.button, style, disabled && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
       {...props}
     >
       {icon}
-    </button>
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    padding: 8,
+    borderRadius: 24, // Makes it circular
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+});
 
 export default IconButton;

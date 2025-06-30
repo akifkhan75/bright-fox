@@ -1,21 +1,29 @@
-
 import React, { useContext, useMemo } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { AppContext } from '../../App';
-import { View, UserRole, ChatConversation, ChatParticipant } from '../../types';
+import { View as ViewType, UserRole, ChatConversation, ChatParticipant } from '../../types';
 import Card from '../../components/Card';
-import { ChatBubbleLeftRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const ChatListScreen: React.FC = () => {
   const context = useContext(AppContext);
 
-  if (!context || !context.appState.currentUserRole || (context.appState.currentUserRole !== UserRole.Parent && context.appState.currentUserRole !== UserRole.Teacher) ) {
-    // Redirect or show error if not logged in as parent or teacher
-    context?.setViewWithPath(View.RoleSelection, '/roleselection', { replace: true });
-    return <div className="p-4 text-center">Access Denied. Please log in.</div>;
+  if (!context || !context.appState.currentUserRole || 
+      (context.appState.currentUserRole !== UserRole.Parent && 
+       context.appState.currentUserRole !== UserRole.Teacher)) {
+    context?.setViewWithPath(ViewType.RoleSelection, '/roleselection', { replace: true });
+    return (
+      <View style={styles.centeredContainer}>
+        <Text>Access Denied. Please log in.</Text>
+      </View>
+    );
   }
 
   const { appState, setViewWithPath } = context;
-  const currentUserId = appState.currentUserRole === UserRole.Parent ? appState.currentParentProfileId : appState.currentTeacherProfileId;
+  const currentUserId = appState.currentUserRole === UserRole.Parent 
+    ? appState.currentParentProfileId 
+    : appState.currentTeacherProfileId;
 
   const userConversations = useMemo(() => {
     if (!currentUserId) return [];
@@ -30,71 +38,205 @@ const ChatListScreen: React.FC = () => {
   };
 
   if (!currentUserId) {
-     return <div className="p-4 text-center">Loading user data...</div>;
+    return (
+      <View style={styles.centeredContainer}>
+        <Text>Loading user data...</Text>
+      </View>
+    );
   }
 
+  const handleCardPress = (convoId: string) => {
+    setViewWithPath(ViewType.ChatRoomScreen, `/chatroomscreen/${convoId}`);
+  };
+
+  const formatTime = (timestamp?: number) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
-    <div className="p-4 md:p-6 bg-slate-50 min-h-full">
-      <div className="flex items-center mb-6">
-        <ChatBubbleLeftRightIcon className="h-8 w-8 mr-3 text-sky-600" />
-        <h1 className="text-2xl font-bold text-sky-700 font-display">My Messages</h1>
-      </div>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Icon name="message-text" size={24} color="#0284c7" />
+        <Text style={styles.headerText}>My Messages</Text>
+      </View>
 
       {userConversations.length === 0 ? (
-        <Card className="text-center py-10">
-          <ChatBubbleLeftRightIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 font-semibold">No conversations yet.</p>
+        <Card style={styles.emptyCard}>
+          <Icon name="message-text" size={48} color="#d1d5db" />
+          <Text style={styles.emptyText}>No conversations yet.</Text>
           {appState.currentUserRole === UserRole.Parent && (
-            <p className="text-gray-500 text-sm mt-1">Start a chat by visiting a teacher's profile.</p>
+            <Text style={styles.emptySubtext}>Start a chat by visiting a teacher's profile.</Text>
           )}
-           {appState.currentUserRole === UserRole.Teacher && (
-            <p className="text-gray-500 text-sm mt-1">Parents can initiate chats with you.</p>
+          {appState.currentUserRole === UserRole.Teacher && (
+            <Text style={styles.emptySubtext}>Parents can initiate chats with you.</Text>
           )}
         </Card>
       ) : (
-        <div className="space-y-3">
+        <View style={styles.conversationList}>
           {userConversations.map(convo => {
             const otherParticipant = getOtherParticipant(convo);
             const unreadMessages = convo.unreadCount?.[currentUserId] || 0;
 
             return (
-              <Card 
-                key={convo.id} 
-                onClick={() => setViewWithPath(View.ChatRoomScreen, `/chatroomscreen/${convo.id}`)}
-                className={`!p-3 sm:!p-4 hover:!shadow-md transition-shadow ${unreadMessages > 0 ? '!bg-sky-50 border-sky-300' : '!bg-white'}`}
+              <TouchableOpacity 
+                key={convo.id}
+                onPress={() => handleCardPress(convo.id)}
               >
-                <div className="flex items-center space-x-3">
-                  {otherParticipant?.avatarUrl ? (
-                    <img src={otherParticipant.avatarUrl} alt={otherParticipant.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"/>
-                  ) : (
-                    <UserCircleIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300"/>
-                  )}
-                  <div className="flex-grow min-w-0">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">{otherParticipant?.name || 'Unknown User'}</h3>
+                <Card style={[
+                  styles.conversationCard,
+                  unreadMessages > 0 && styles.unreadCard
+                ]}>
+                  <View style={styles.conversationContent}>
+                    {otherParticipant?.avatarUrl ? (
+                      <Image 
+                        source={{ uri: otherParticipant.avatarUrl }} 
+                        style={styles.avatar}
+                      />
+                    ) : (
+                      <MaterialIcons name="account-circle" size={48} color="#d1d5db" />
+                    )}
+                    <View style={styles.messageInfo}>
+                      <View style={styles.messageHeader}>
+                        <Text style={styles.participantName} numberOfLines={1}>
+                          {otherParticipant?.name || 'Unknown User'}
+                        </Text>
                         {convo.lastMessageTimestamp && (
-                            <p className="text-[10px] sm:text-xs text-gray-400 flex-shrink-0 ml-2">
-                                {new Date(convo.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
+                          <Text style={styles.messageTime}>
+                            {formatTime(convo.lastMessageTimestamp)}
+                          </Text>
                         )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <p className="text-xs sm:text-sm text-gray-500 truncate">{convo.lastMessageText || 'No messages yet...'}</p>
+                      </View>
+                      <View style={styles.messagePreview}>
+                        <Text style={styles.messageText} numberOfLines={1}>
+                          {convo.lastMessageText || 'No messages yet...'}
+                        </Text>
                         {unreadMessages > 0 && (
-                            <span className="ml-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0">
-                                {unreadMessages > 9 ? '9+' : unreadMessages}
-                            </span>
+                          <View style={styles.unreadBadge}>
+                            <Text style={styles.unreadCount}>
+                              {unreadMessages > 9 ? '9+' : unreadMessages}
+                            </Text>
+                          </View>
                         )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                      </View>
+                    </View>
+                  </View>
+                </Card>
+              </TouchableOpacity>
             );
           })}
-        </div>
+        </View>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f8fafc',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0369a1',
+    marginLeft: 8,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    marginTop: 16,
+    color: '#4b5563',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    marginTop: 4,
+    color: '#6b7280',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  conversationList: {
+    gap: 12,
+  },
+  conversationCard: {
+    padding: 12,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  unreadCard: {
+    backgroundColor: '#f0f9ff',
+    borderColor: '#bae6fd',
+  },
+  conversationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  messageInfo: {
+    flex: 1,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  participantName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    flex: 1,
+    marginRight: 8,
+  },
+  messageTime: {
+    fontSize: 10,
+    color: '#9ca3af',
+  },
+  messagePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  messageText: {
+    fontSize: 12,
+    color: '#64748b',
+    flex: 1,
+  },
+  unreadBadge: {
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  unreadCount: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+});
 
 export default ChatListScreen;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { BookOpenIcon } from '@heroicons/react/24/solid';
+// import { BookOpenIcon } from './icons'; // You'll need to create or import this icon
 
 // Mock Fairytale
 const fairytale = {
@@ -21,7 +22,7 @@ const FairytaleReaderScreen: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleNextPage = () => {
-    if (currentPage < fairytale.pages.length -1) {
+    if (currentPage < fairytale.pages.length - 1) {
       setCurrentPage(prev => prev + 1);
     }
   };
@@ -32,39 +33,132 @@ const FairytaleReaderScreen: React.FC = () => {
     }
   };
 
-  const isLastPage = currentPage === fairytale.pages.length -1;
+  const isLastPage = currentPage === fairytale.pages.length - 1;
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-sky-200 via-blue-200 to-indigo-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-md w-full">
-        <BookOpenIcon className="h-12 w-12 text-sky-600 mx-auto mb-4" />
-        <h2 className="text-2xl sm:text-3xl font-bold text-sky-700 mb-3 text-center font-display">{fairytale.title}</h2>
+    <View style={styles.container}>
+      <Card style={styles.mainCard}>
+        {/* <BookOpenIcon style={styles.bookIcon} /> */}
+        <Text style={styles.title}>{fairytale.title}</Text>
         
-        <Card className="!bg-white/70 min-h-[150px] sm:min-h-[200px] flex items-center justify-center p-4 sm:p-6 mb-6 shadow-inner">
-            <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-center font-kidFriendly">
-                {fairytale.pages[currentPage]}
-            </p>
+        <Card style={styles.pageCard}>
+          <Text style={styles.pageText}>
+            {fairytale.pages[currentPage]}
+          </Text>
         </Card>
 
         {isLastPage && (
-            <Card className="!bg-yellow-100 text-yellow-700 p-3 text-center mb-4">
-                <h4 className="font-semibold">Moral of the Story:</h4>
-                <p className="text-sm">{fairytale.moral}</p>
-            </Card>
+          <Card style={styles.moralCard}>
+            <Text style={styles.moralTitle}>Moral of the Story:</Text>
+            <Text style={styles.moralText}>{fairytale.moral}</Text>
+          </Card>
         )}
 
-        <div className="flex justify-between items-center">
-          <Button onClick={handlePrevPage} disabled={currentPage === 0} variant="secondary" className="!bg-pink-500 hover:!bg-pink-600">
+        <View style={styles.navigationContainer}>
+          <Button 
+            onPress={handlePrevPage} 
+            disabled={currentPage === 0} 
+            style={styles.prevButton}
+            textStyle={styles.buttonText}
+          >
             Previous
           </Button>
-          <p className="text-sm text-gray-500">Page {currentPage + 1} of {fairytale.pages.length}</p>
-          <Button onClick={isLastPage ? () => setCurrentPage(0) : handleNextPage} className="bg-sky-500 hover:bg-sky-600">
+          <Text style={styles.pageIndicator}>
+            Page {currentPage + 1} of {fairytale.pages.length}
+          </Text>
+          <Button 
+            onPress={isLastPage ? () => setCurrentPage(0) : handleNextPage} 
+            style={styles.nextButton}
+            textStyle={styles.buttonText}
+          >
             {isLastPage ? "Read Again" : "Next"}
           </Button>
-        </div>
+        </View>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#bae6fd', // sky-200 as base for gradient
+  },
+  mainCard: {
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+  },
+  bookIcon: {
+    width: 48,
+    height: 48,
+    color: '#0284c7', // sky-600
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0369a1', // sky-700
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  pageCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    minHeight: 200,
+    justifyContent: 'center',
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  pageText: {
+    color: '#374151', // gray-700
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  moralCard: {
+    backgroundColor: '#fef9c3', // yellow-100
+    padding: 12,
+    marginBottom: 16,
+  },
+  moralTitle: {
+    fontWeight: '600',
+    color: '#854d0e', // yellow-700
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  moralText: {
+    fontSize: 14,
+    color: '#854d0e', // yellow-700
+    textAlign: 'center',
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  prevButton: {
+    backgroundColor: '#ec4899', // pink-500
+    paddingHorizontal: 16,
+  },
+  nextButton: {
+    backgroundColor: '#0284c7', // sky-500
+    paddingHorizontal: 16,
+  },
+  buttonText: {
+    color: 'white',
+  },
+  pageIndicator: {
+    fontSize: 14,
+    color: '#6b7280', // gray-500
+  },
+});
 
 export default FairytaleReaderScreen;

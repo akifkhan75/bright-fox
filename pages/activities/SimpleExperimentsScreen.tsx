@@ -1,7 +1,8 @@
 import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { BeakerIcon, LightBulbIcon } from '@heroicons/react/24/solid';
+// import { BeakerIcon, LightBulbIcon } from './icons'; // You'll need to create or import these icons
 
 const experiments = [
   {
@@ -27,39 +28,135 @@ const SimpleExperimentsScreen: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-200 via-sky-200 to-blue-200 min-h-full flex flex-col items-center justify-center">
-      <Card className="max-w-lg w-full">
-        <div className="text-center mb-4">
-            <BeakerIcon className="h-12 w-12 text-cyan-600 mx-auto mb-2" />
-            <h2 className="text-3xl font-bold text-cyan-700 font-display">Simple Science Lab!</h2>
-        </div>
+    <View style={styles.container}>
+      <Card style={styles.mainCard}>
+        <View style={styles.header}>
+          {/* <BeakerIcon style={styles.icon} /> */}
+          <Text style={styles.title}>Simple Science Lab!</Text>
+        </View>
         
-        <Card className="!bg-white/80 mb-6 shadow-inner">
-            <div className="flex items-center text-sky-700 mb-2">
-                <LightBulbIcon className="h-7 w-7 mr-2"/>
-                <h3 className="text-xl font-semibold">{experiment.title}</h3>
-            </div>
-            <p className="text-sm text-gray-700 mb-3 leading-relaxed">{experiment.description}</p>
-            
-            <h4 className="font-semibold text-gray-600 text-sm">You will need:</h4>
-            <ul className="list-disc list-inside text-xs text-gray-600 mb-3">
-                {experiment.materials.map(mat => <li key={mat}>{mat}</li>)}
-            </ul>
-            
-            <h4 className="font-semibold text-gray-600 text-sm">What's Happening? (Simplified)</h4>
-            <p className="text-xs text-gray-600">{experiment.explanation}</p>
+        <Card style={styles.experimentCard}>
+          <View style={styles.experimentHeader}>
+            {/* <LightBulbIcon style={styles.bulbIcon} /> */}
+            <Text style={styles.experimentTitle}>{experiment.title}</Text>
+          </View>
+          <Text style={styles.experimentDescription}>{experiment.description}</Text>
+          
+          <Text style={styles.sectionTitle}>You will need:</Text>
+          <View style={styles.materialsList}>
+            {experiment.materials.map((mat, index) => (
+              <Text key={index} style={styles.materialItem}>• {mat}</Text>
+            ))}
+          </View>
+          
+          <Text style={styles.sectionTitle}>What's Happening? (Simplified)</Text>
+          <Text style={styles.explanation}>{experiment.explanation}</Text>
         </Card>
 
         <Button 
-          onClick={nextExperiment} 
-          className="w-full bg-cyan-500 hover:bg-cyan-600"
+          onPress={nextExperiment} 
+          style={styles.nextButton}
+          textStyle={styles.nextButtonText}
         >
           Try Another Experiment!
         </Button>
-        <p className="text-xs text-gray-500 mt-4 text-center">Adult supervision recommended for all experiments.</p>
+        <Text style={styles.note}>Adult supervision recommended for all experiments.</Text>
       </Card>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#bae6fd', // sky-200 as base for gradient
+  },
+  mainCard: {
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+    padding: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    color: '#0891b2', // cyan-600
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#155e75', // cyan-700
+    textAlign: 'center',
+  },
+  experimentCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  experimentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bulbIcon: {
+    width: 28,
+    height: 28,
+    color: '#0369a1', // sky-700
+    marginRight: 8,
+  },
+  experimentTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0369a1', // sky-700
+  },
+  experimentDescription: {
+    fontSize: 14,
+    color: '#374151', // gray-700
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4b5563', // gray-600
+    marginBottom: 4,
+  },
+  materialsList: {
+    marginBottom: 12,
+  },
+  materialItem: {
+    fontSize: 12,
+    color: '#4b5563', // gray-600
+    marginLeft: 8,
+  },
+  explanation: {
+    fontSize: 12,
+    color: '#4b5563', // gray-600
+    lineHeight: 18,
+  },
+  nextButton: {
+    backgroundColor: '#06b6d4', // cyan-500
+  },
+  nextButtonText: {
+    color: 'white',
+  },
+  note: {
+    fontSize: 12,
+    color: '#6b7280', // gray-500
+    textAlign: 'center',
+    marginTop: 16,
+  },
+});
 
 export default SimpleExperimentsScreen;

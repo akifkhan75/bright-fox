@@ -70,10 +70,10 @@ export const AGE_GROUPS_V3: AgeGroup[] = ['2-4', '5-7', '8-10'];
 
 // For V1 KidHomeScreen style V5
 export const ACTIVITY_CATEGORIES_CONFIG: ActivityCategory[] = [
-    { id: 'numbers', name: 'Numbers', icon: CalculatorIcon, color: 'bg-orange-400 hover:bg-orange-500' },
-    { id: 'reading', name: 'Reading', icon: BookOpenIcon, color: 'bg-sky-500 hover:bg-sky-600' },
-    { id: 'puzzles', name: 'Puzzles', icon: PuzzlePieceIcon, color: 'bg-green-500 hover:bg-green-600' },
-    { id: 'drawing', name: 'Drawing', icon: PaintBrushIcon, color: 'bg-purple-500 hover:bg-purple-600' },
+    { id: 'numbers', name: 'Numbers', icon: CalculatorIcon, color: 'orange' },
+    { id: 'reading', name: 'Reading', icon: BookOpenIcon, color: 'skyblue' },
+    { id: 'puzzles', name: 'Puzzles', icon: PuzzlePieceIcon, color: 'green' },
+    { id: 'drawing', name: 'Drawing', icon: PaintBrushIcon, color: 'purple' },
 ];
 
 export const BADGE_DEFINITIONS: Badge[] = [

@@ -124,17 +124,14 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   categoryButton: {
-    width: '48%', // Approximately 2 columns
+    width: '47%', // Approximately 2 columns
     aspectRatio: 1,
     borderRadius: 16,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: 'grey',
+    borderWidth: 1
   },
   categoryIcon: {
     width: 48,

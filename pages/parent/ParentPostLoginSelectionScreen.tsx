@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppContext } from '../../App';
-import { View as ViewType, UserRole, KidProfile } from '../../types';
+import { UserRole, KidProfile } from '../../types';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 // import SparklesIcon from '../../assets/icons/SparklesIcon';
